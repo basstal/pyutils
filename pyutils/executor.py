@@ -195,7 +195,7 @@ class Executor:
         For /f "tokens=3* delims= " %%i in ('Reg Query %regPath% /v %key% ') do (
             if "%%j"=="" (Set oldValue=%%i) else (Set oldValue=%%i %%j)
         )
-    ) else Set oldValue=""
+    ) else Set oldValue=
 
     :: 备份注册表
     @REM reg export %regPath% %~dp0%~n0.reg
@@ -212,14 +212,14 @@ class Executor:
     '''
 
 
-    def set_env_win(self, key, value, override=False):
+    def set_env_win(self, key:str, value:str, override=False):
         """
         windows 设置系统环境变量
         使用生成 bat 文件并执行的方式
 
         Args:
-            key ([string]): 环境变量的键
-            value ([object]): 环境变量的值
+            key (str): 环境变量的键
+            value (str): 环境变量的值
             override (bool, optional): 如果环境变量已存在，是否采用覆盖的方式. Defaults to False.
         """
         if not shd.is_win():
@@ -231,7 +231,7 @@ class Executor:
         bat_cmd = self.ADD_ENV.format(user='me', key=key, value=value, override=override)
         # info('=> run cmd : \n {}'.format(bat_cmd))
         tf= tempfile.mkstemp(suffix='.bat', prefix=None, dir=self.path_to_temp_dir(), text=True)
-        with open(tf[1], 'w+') as f:
+        with open(tf[1], 'w+', encoding='utf-8') as f:
             f.write(bat_cmd)
         self.execute_file(tf[1], None)
         os.close(tf[0])
