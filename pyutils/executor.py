@@ -4,8 +4,8 @@ import time
 import subprocess
 import sys
 import charade
-import fsext
 
+import pyutils.fsext as fsext
 import pyutils.simplelogger as logger
 import pyutils.shorthand as shd
 
