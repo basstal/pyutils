@@ -1,6 +1,7 @@
 import os
 import sys
-import shorthand as shd
+
+import pyutils.shorthand as shd
 
 ######################
 ######################

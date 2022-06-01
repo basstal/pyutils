@@ -3,10 +3,11 @@ import tempfile
 import time
 import subprocess
 import sys
-import simplelogger as logger
-import shorthand as shd
 import charade
 import fsext
+
+import pyutils.simplelogger as logger
+import pyutils.shorthand as shd
 
 def detect_encoding(input):
     """

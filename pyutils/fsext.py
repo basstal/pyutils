@@ -3,8 +3,9 @@ import fnmatch
 import glob
 import os
 import shutil
-import shorthand as shd
-import simplelogger as logger
+
+import pyutils.shorthand as shd
+import pyutils.simplelogger as logger
 ########################
 ########################
 #    文件系统扩展方法    #
