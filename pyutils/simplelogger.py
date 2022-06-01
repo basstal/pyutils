@@ -16,7 +16,7 @@ LOG_LEVEL_ERROR = 3
 LOG_LEVEL_SUCCESS = 4
 LOG_LEVEL_NONE = 99
 LOG_INDENT = 0
-
+ErrorRaiseExcpetion = False
 
 def color_message(message, color_code, bold=False):
     if shd.is_win():
@@ -65,6 +65,6 @@ def warning(message, bold=False):
 
 
 def error(message, bold=False):
-    if os.getenv("ErrorRaiseExcpetion") == True:
+    if ErrorRaiseExcpetion:
         raise Exception(message)
     log(message, LOG_LEVEL_ERROR, False, bold)
