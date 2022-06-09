@@ -1,3 +1,7 @@
+# [0.1.1] 22-06-09
+
+- 添加：executor 修改工作目录的参数。
+
 # [0.1.0] 22-06-01
 
 - simplelogger ErrorRaiseExcpetion 使用模块内全局变量。
