@@ -49,11 +49,16 @@ class ExecuteResult:
 class Executor:
 
     verbose = True
+    """是否输出详细执行信息
+    """
+    previous_cwd: str
+    """记录执行前的工作目录
+    """
 
     def __init__(self, verbose=True):
         self.verbose = verbose
 
-    def format_args(self, args):
+    def __format_args(self, args):
         if type(args) is list:
             return ' '.join(args)
         elif type(args) is str:
@@ -72,8 +77,8 @@ class Executor:
         """
         error_message = f'{result.error}\n{result.out_str}' if result.error != '' else result.out_str
         logger.error(f'\nCommand failed: {result.cmd_line}\n'
-                f'code: {result.code}\n'
-                f'message: {error_message}', True)
+                     f'code: {result.code}\n'
+                     f'message: {error_message}', True)
         sys.exit(exit_code)
 
     def path_to_temp_dir(self):
@@ -88,7 +93,7 @@ class Executor:
             os.mkdir(dir)
         return dir
 
-    def execute_by_git_bash(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
+    def execute_by_git_bash(self, cmd, args, work_dir=None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
         """
         将待执行的命令（ cmd 和 args ）写入临时文件中，
         通过 git-bash 程序来运行该临时文件，
@@ -103,18 +108,20 @@ class Executor:
             env (str, optional): Popen env argument. Defaults to None.
             shell (bool, optional): Popen shell argument. Defaults to True.
         """
-        
-        tf= tempfile.mkstemp(suffix='.sh', prefix=None, dir=self.path_to_temp_dir(), text=True)
-        args = self.format_args(args)
+
+        self.__change_cwd(work_dir)
+        tf = tempfile.mkstemp(suffix='.sh', prefix=None, dir=self.path_to_temp_dir(), text=True)
+        args = self.__format_args(args)
         cmd_line = '{0} {1}'.format(cmd, args)
         with open(tf[1], 'w+') as f:
             f.write(cmd_line)
         result = self.execute_file(tf[1], None, ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell)
         os.close(tf[0])
         os.unlink(tf[1])
+        self.__restore_cwd()
         return result
 
-    def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
+    def execute_straight(self, cmd, args, work_dir=None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
         """
         启动subprocess , 直接执行命令
 
@@ -133,8 +140,9 @@ class Executor:
         @shell
             Popen shell argument
         """
-        args = self.format_args(args)
+        args = self.__format_args(args)
         cmd_line = '{0} {1}'.format(cmd, args)
+        self.__change_cwd(work_dir)
 
         if self.verbose:
             logger.LOG_INDENT
@@ -164,6 +172,8 @@ class Executor:
             self.common_error_out(result)
         if self.verbose:
             logger.LOG_INDENT -= 1
+        self.__restore_cwd()
+
         return result
 
     # https://blog.csdn.net/doots/article/details/86705182
@@ -212,8 +222,7 @@ class Executor:
     )
     '''
 
-
-    def set_env_win(self, key:str, value:str, override=False):
+    def set_env_win(self, key: str, value: str, override=False):
         """
         windows 设置系统环境变量
         使用生成 bat 文件并执行的方式
@@ -231,7 +240,7 @@ class Executor:
         # 运行设置环境变量命令
         bat_cmd = self.ADD_ENV.format(user='me', key=key, value=value, override=override)
         # info('=> run cmd : \n {}'.format(bat_cmd))
-        tf= tempfile.mkstemp(suffix='.bat', prefix=None, dir=self.path_to_temp_dir(), text=True)
+        tf = tempfile.mkstemp(suffix='.bat', prefix=None, dir=self.path_to_temp_dir(), text=True)
         with open(tf[1], 'w+', encoding='utf-8') as f:
             f.write(bat_cmd)
         self.execute_file(tf[1], None)
@@ -241,7 +250,7 @@ class Executor:
             logger.info('=> Set system environment {0}={1} finished.'.format(key, value))
         else:
             logger.info('=> Append {1} to system environment key {0}.'.format(key, value))
-            
+
     def get_git_path(self):
         """
         先尝试从环境变量获取，如果失败则搜索本地路径以获取 git 安装路径
@@ -270,7 +279,7 @@ class Executor:
             exit(-2)
         return git_path
 
-    def ext_to_exe(self, ext):
+    def __ext2exe(self, ext):
         """
         按传入的后缀名称选择对应的可执行程序
 
@@ -285,6 +294,30 @@ class Executor:
                 return '/bin/bash'
         if ext.endswith('.py'):
             return 'python'
+
+    def __change_cwd(self, work_dir):
+        """修改当前工作目录
+
+        Args:
+            work_dir (str): 指定的工作目录
+        """
+        if work_dir is None:
+            return
+        full_work_dir = os.path.realpath(work_dir)
+        if self.previous_cwd is not None:
+            if self.previous_cwd == full_work_dir:
+                return
+            logger.warning('try change_cwd twice in execution process is not valid.')
+            return
+        self.previous_cwd = os.getcwd()
+        # should be restore
+        os.chdir(full_work_dir)
+
+    def __restore_cwd(self):
+        """恢复到修改前的工作目录
+        """
+        os.chdir(self.previous_cwd)
+        self.previous_cwd = None
 
     def execute_file(self, script, args, work_dir=None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
         """
@@ -303,15 +336,11 @@ class Executor:
         Returns:
             [type]: [description]
         """
-        args = self.format_args(args)
-        previous_cwd = os.getcwd()
-        if work_dir is not None:
-            # should be restore
-            os.chdir(os.path.realpath(work_dir))
-
+        args = self.__format_args(args)
+        self.__change_cwd(work_dir)
         split_result = os.path.splitext(script)
         result = None
-        exe = self.ext_to_exe(split_result[1])
+        exe = self.__ext2exe(split_result[1])
         if exe is None:
             result = self.execute_straight(
                 script, args, ignore_error, use_direct_stdout, exit_at_once, env, shell)
@@ -319,7 +348,7 @@ class Executor:
             result = self.execute_straight(
                 f'{exe} {script}', args, ignore_error, use_direct_stdout, exit_at_once, env, shell)
 
-        os.chdir(previous_cwd)
+        self.__restore_cwd()
         return result
 
     def execute_module(self, module, *module_parameters):
