@@ -51,7 +51,7 @@ class Executor:
     verbose = True
     """是否输出详细执行信息
     """
-    previous_cwd: str
+    previous_cwd: str = None
     """记录执行前的工作目录
     """
 
@@ -93,7 +93,7 @@ class Executor:
             os.mkdir(dir)
         return dir
 
-    def execute_by_git_bash(self, cmd, args, work_dir=None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
+    def execute_by_git_bash(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir:str=None):
         """
         将待执行的命令（ cmd 和 args ）写入临时文件中，
         通过 git-bash 程序来运行该临时文件，
@@ -121,7 +121,7 @@ class Executor:
         self.__restore_cwd()
         return result
 
-    def execute_straight(self, cmd, args, work_dir=None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
+    def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir:str=None):
         """
         启动subprocess , 直接执行命令
 
@@ -316,10 +316,11 @@ class Executor:
     def __restore_cwd(self):
         """恢复到修改前的工作目录
         """
-        os.chdir(self.previous_cwd)
+        if self.previous_cwd is not None:
+            os.chdir(self.previous_cwd)
         self.previous_cwd = None
 
-    def execute_file(self, script, args, work_dir=None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
+    def execute_file(self, script, args, work_dir:str=None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
         """
         执行脚本文件并传入参数
 
