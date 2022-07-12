@@ -43,7 +43,13 @@ def search(pattern: str, validator=None, params={}):
         return glob_wrap(pattern)
 
 
-def copy_files(target_path, src_file_list):
+def copy_files(target_path, src_file_list, logs=False):
+    """复制并覆盖目标路径下所有同名内容，如果 src_file 是文件夹，使用 shutil.copytree 复制，否则使用 shutil.copy2
+
+    Args:
+        target_path (str): 目标路径
+        src_file_list (list): 被复制的文件列表
+    """
     for src_file in src_file_list:
         if os.path.exists(src_file):
             src_basename = os.path.basename(src_file)
@@ -51,13 +57,18 @@ def copy_files(target_path, src_file_list):
             deploy_dir = os.path.dirname(deploy_file_path)
             if not os.path.exists(deploy_dir):
                 os.makedirs(deploy_dir)
-                logger.info('Makedirs => {}'.format(deploy_dir))
+                if logs:
+                    logger.info('Makedirs => {}'.format(deploy_dir))
             if os.path.isfile(deploy_file_path):
                 os.remove(deploy_file_path)
-                logger.info('Removed => {}'.format(deploy_file_path))
-
-            shutil.copy(src_file, deploy_file_path)
-            logger.info('Copy file from {} to => {}'.format(src_file, deploy_file_path))
+                if logs:
+                    logger.info('Removed => {}'.format(deploy_file_path))
+            if os.path.isfile(src_file):
+                shutil.copy2(src_file, deploy_file_path)
+            else:
+                shutil.copytree(src_file, deploy_file_path)
+            if logs:
+                logger.info('Copy file from {} to => {}'.format(src_file, deploy_file_path))
 
 
 def read_file(file, decode='utf-8'):
