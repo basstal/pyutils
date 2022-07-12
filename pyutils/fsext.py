@@ -3,6 +3,7 @@ import fnmatch
 import glob
 import os
 import shutil
+import base64
 
 import pyutils.shorthand as shd
 import pyutils.simplelogger as logger
@@ -13,7 +14,7 @@ import pyutils.simplelogger as logger
 ########################
 
 
-def search(pattern:str, validator=None, params={}):
+def search(pattern: str, validator=None, params={}):
     """按指定路径模式搜索单路径，可以添加自定义验证函数来过滤匹配的路径
 
     Args:
@@ -122,3 +123,26 @@ def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_link
                         result.append(full_path)
     return sorted(result)
 
+
+def to_base64(src, tar=None):
+    """将 src 路径指定文件转为 base64 并返回，如果提供了 tar 目标文件路径，则将返回值同时存储在 tar 目标文件
+
+    Args:
+        src (str): 源文件路径
+        tar (str): 目标文件路径
+    """
+    if not os.path.isfile(src):
+        logger.warning(f'{src} is not a file path.')
+        return ''
+    filename = os.path.split(src)[1]
+    ext = os.path.splitext(src)[1][1:]
+    with open(src, 'rb') as f_img:
+        base64_out = base64.b64encode(f_img.read())
+    content = f"{filename} = [img]:data:image/{ext};base64,{base64_out.decode('utf-8')}\n"
+    if tar is not None:
+        if os.path.exists(tar):
+            logger.warning(f'{tar} is not a file or target file exist.')
+            return content
+        with open(tar, 'w+', encoding='utf-8') as f:
+            f.write(content)
+    return content
