@@ -25,8 +25,10 @@
 #  MA 02110-1301, USA.
 
 
-import sys, os
+import sys
+import os
 import re
+
 
 class Templite(object):
 
@@ -77,27 +79,31 @@ class Templite(object):
             part = part.replace('\\'.join(start), start)
             part = part.replace('\\'.join(end), end)
             if i % 2 == 0:
-                if not part: continue
+                if not part:
+                    continue
                 lines = part.splitlines()
                 if len(lines) > 1:
-                    if all(not l.strip() for l in lines): continue                
+                    if all(not line.strip() for line in lines):
+                        continue
                 part = part.replace('\\', '\\\\').replace('"', '\\"')
                 part = '\t' * offset + 'write("""%s""")' % part
             else:
                 part = part.rstrip()
-                if not part: continue
+                if not part:
+                    continue
                 part_stripped = part.lstrip()
                 if part_stripped.startswith(':'):
                     if not offset:
                         raise SyntaxError('no block statement to terminate: ${%s}$' % part)
                     offset -= 1
                     part = part_stripped[1:]
-                    if not part.endswith(':'): continue
+                    if not part.endswith(':'):
+                        continue
                 elif self.autowrite.match(part_stripped):
                     part = 'write(%s)' % part_stripped
                 lines = part.splitlines()
-                margin = min(len(l) - len(l.lstrip()) for l in lines if l.strip())
-                part = '\n'.join('\t' * offset + l[margin:] for l in lines)
+                margin = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
+                part = '\n'.join('\t' * offset + line[margin:] for line in lines)
                 if part.endswith(':'):
                     offset += 1
             tokens.append(part)
@@ -110,11 +116,13 @@ class Templite(object):
         stack = []
         namespace['__file__'] = self.file
         # add write method
+
         def write(*args):
             for value in args:
                 stack.append(str(value))
         namespace['write'] = write
         # add include method
+
         def include(file):
             if not os.path.isabs(file):
                 if self.file:

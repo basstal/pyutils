@@ -19,6 +19,7 @@ LOG_LEVEL_NONE = 99
 LOG_INDENT = 0
 ErrorRaiseExcpetion = False
 
+
 def color_message(message, color_code, bold=False):
     if shd.is_win():
         os.system('')

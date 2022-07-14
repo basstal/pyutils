@@ -108,7 +108,7 @@ def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_link
         if not recursive:
             try:
                 walk_result = [next(walk_result)]
-            except:
+            except Exception:
                 walk_result = None
         if walk_result is not None:
             for dirpath, _, filenames in walk_result:

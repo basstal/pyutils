@@ -9,6 +9,7 @@ import pyutils.fsext as fsext
 import pyutils.simplelogger as logger
 import pyutils.shorthand as shd
 
+
 def detect_encoding(input):
     """
     猜测 bytes | str 的编码
@@ -93,7 +94,7 @@ class Executor:
             os.mkdir(dir)
         return dir
 
-    def execute_by_git_bash(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir:str=None):
+    def execute_by_git_bash(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None):
         """
         将待执行的命令（ cmd 和 args ）写入临时文件中，
         通过 git-bash 程序来运行该临时文件，
@@ -121,7 +122,7 @@ class Executor:
         self.__restore_cwd()
         return result
 
-    def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir:str=None):
+    def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None):
         """
         启动subprocess , 直接执行命令
 
@@ -260,21 +261,21 @@ class Executor:
         """
         git_path = os.getenv('GIT_PATH')
 
-        if git_path == None:
+        if git_path is None:
             logger.warning('=> Begin searching git path, it will take a long time...', False)
             # windows 先搜索默认路径
             if shd.is_win():
                 git_path = fsext.search('/Program*/Git/git-bash.exe')
-                if git_path == None:
+                if git_path is None:
                     git_path = fsext.search('/**/Git/git-bash.exe')
-                if git_path != None:
+                if git_path is not None:
                     git_path = git_path.replace('git-bash.exe', '')
                     self.set_env_win('GIT_PATH', git_path, override=True)
             # TODO: 目前 macOS 搜索路径是写死的
             elif shd.is_macOS():
                 git_path = fsext.search('/usr/bin/git')
 
-        if git_path == None:
+        if git_path is None:
             logger.error('=> Cannot find git install path. ??')
             exit(-2)
         return git_path
@@ -320,7 +321,7 @@ class Executor:
             os.chdir(self.previous_cwd)
         self.previous_cwd = None
 
-    def execute_file(self, script, args, work_dir:str=None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
+    def execute_file(self, script, args, work_dir: str = None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
         """
         执行脚本文件并传入参数
 
