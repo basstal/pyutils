@@ -99,6 +99,7 @@ def get_all_volumes_win():
 def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_links=False, recursive=True, apply_ignore_when_conflick=True):
     """
     NOTE:这里的 patterns 用的是 UNIX 通配符，而非语言正则表达式
+    TODO: replace with glob.glob
     """
     if os.path.isfile(work_dir):
         result = [work_dir]
