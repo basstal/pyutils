@@ -3,7 +3,7 @@ import pyutils.fsext as fs
 import os
 
 
-class TestShortHand(unittest.TestCase):
+class TestFsext(unittest.TestCase):
     def test_to_base64(self):
         cwd = os.getcwd()
         if not cwd.endswith('tests'):

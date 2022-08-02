@@ -37,7 +37,7 @@ def log(message, level=LOG_LEVEL_NORMAL, noident=False, bold=False):
 
     if level >= LOG_LEVEL:
         if level == LOG_LEVEL_INFO:
-            message = color_message(message, 34, bold)
+            message = color_message(message, 0, bold)
 
         if level == LOG_LEVEL_WARNING:
             message = color_message('warning: {}'.format(message), 33, bold)

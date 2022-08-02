@@ -1,3 +1,7 @@
+# [0.2.0] 22-08-02
+
+- 添加 autoupgrade 模块
+
 # [0.1.3] 22-07-12 
 
 - 修改：fsext copy_files 使用 shutil.copytree
