@@ -1,7 +1,8 @@
+import sys
 import urllib.request
 import re
 from os import execl, environ
-from sys import executable, orig_argv
+from sys import executable
 import semantic_version
 from pyutils.executor import Executor
 import simplelogger as logger
@@ -81,9 +82,12 @@ class AutoUpgrade(object):
         """ Restart application with same args as it was started.
             Does **not** return
         """
+        in_argv = sys.argv
+        if sys.version_info >= (3, 10):
+            in_argv = sys.orig_argv
         if self.verbose:
-            logger.info(f"Restarting {executable} {orig_argv}")
-        execl(executable, *orig_argv)
+            logger.info(f"Restarting {executable} {in_argv}")
+        execl(executable, *in_argv)
 
     def check_if_later_version_exist(self):
         """ Check if pkg has a later version
