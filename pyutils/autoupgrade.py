@@ -53,6 +53,9 @@ class AutoUpgrade(object):
             self.upgrade(dependencies)
             if restart:
                 self.restart()
+            # NOTE:if restart is True, return will never execute.
+            return True
+        return False
 
     def upgrade(self, dependencies=False):
         """ Upgrade the package unconditionaly
