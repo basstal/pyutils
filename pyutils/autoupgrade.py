@@ -1,13 +1,12 @@
-from tabnanny import verbose
 import urllib.request
 import re
-import pkg_resources
 from os import execl, environ
-from sys import executable, argv
+from sys import executable, orig_argv
 import semantic_version
 from pyutils.executor import Executor
 import simplelogger as logger
 from bs4 import BeautifulSoup
+from importlib import reload
 
 
 class PkgNotFoundError(Exception):
@@ -74,7 +73,8 @@ class AutoUpgrade(object):
             pip_args.append("--no-deps")
         if self._get_current() != EMPTY_VERSION:
             pip_args.append("--upgrade")
-        executor = Executor(verbose)
+        executor = Executor(self.verbose)
+        logger.info(f'AutoUpgrade {self.pkg} with pip arguments : {pip_args}')
         executor.execute_straight(executable, pip_args)
 
     def restart(self):
@@ -82,8 +82,8 @@ class AutoUpgrade(object):
             Does **not** return
         """
         if self.verbose:
-            logger.info(f"Restarting {executable} {str(argv)}")
-        execl(executable, executable, *argv)
+            logger.info(f"Restarting {executable} {orig_argv}")
+        execl(executable, *orig_argv)
 
     def check_if_later_version_exist(self):
         """ Check if pkg has a later version
@@ -96,6 +96,8 @@ class AutoUpgrade(object):
         return highest > current
 
     def _get_current(self):
+        import pkg_resources
+        pkg_resources = reload(pkg_resources)
         try:
             current = semantic_version.Version(pkg_resources.get_distribution(self.pkg).version)
         except pkg_resources.DistributionNotFound:
@@ -111,7 +113,7 @@ class AutoUpgrade(object):
         versions = []
         for link in soup.find_all('a'):
             text = link.get_text()
-            search_result = re.search(f'{self.pkg}-(.*)\.tar\.gz', text)
+            search_result = re.search(rf'{self.pkg}-(.*)\.tar\.gz', text)
             if search_result is not None:
                 version = search_result.group(1)
                 versions.append(semantic_version.Version(version))
