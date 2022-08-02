@@ -85,8 +85,7 @@ class AutoUpgrade(object):
         in_argv = sys.argv
         if sys.version_info >= (3, 10):
             in_argv = sys.orig_argv
-        if self.verbose:
-            logger.info(f"Restarting {executable} {in_argv}")
+        logger.info(f"Restarting {executable} with arguments : {in_argv}")
         execl(executable, *in_argv)
 
     def check_if_later_version_exist(self):
