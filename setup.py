@@ -6,7 +6,6 @@ https://github.com/pypa/sampleproject
 """
 
 # Always prefer setuptools over distutils
-import os
 from setuptools import setup, find_packages
 import pathlib
 
@@ -15,12 +14,6 @@ here = pathlib.Path(__file__).parent.resolve()
 # Get the long description from the README file
 long_description = (here / "README.md").read_text(encoding="utf-8")
 
-
-requirement_path = here / 'requirements.txt'
-install_requires = []
-if os.path.isfile(requirement_path):
-    with open(requirement_path) as f:
-        install_requires = [line.strip() for line in f.readlines()]
 # Arguments marked as "Required" below must be included for upload to PyPI.
 # Fields marked as "Optional" may be commented out.
 
@@ -43,7 +36,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/guides/single-sourcing-package-version/
-    version="0.2.2",  # Required
+    version="0.2.3",  # Required
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -134,7 +127,10 @@ setup(
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/discussions/install-requires-vs-requirements/
-    install_requires=install_requires,  # Optional
+    install_requires=[
+        "charade",
+        "semantic_version",
+        "beautifulsoup4"],  # Optional
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
     # syntax, for example:
@@ -150,7 +146,7 @@ setup(
     # If there are data files included in your packages that need to be
     # installed, specify them here.
     package_data={  # Optional
-        # "sample": ["package_data.dat"],
+        # "requirements": ["./requirements.txt"],
     },
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
