@@ -79,7 +79,7 @@ class AutoUpgrade(object):
             pip_args.append("--upgrade")
         executor = Executor(self.verbose)
         logger.info(f'AutoUpgrade {self.pkg} with pip arguments : {pip_args}')
-        executor.execute_straight(executable, pip_args)
+        executor.execute_straight(executable, pip_args, wrap_blank_with_double_quotes=True)
 
     def restart(self):
         """ Restart application with same args as it was started.

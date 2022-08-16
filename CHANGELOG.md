@@ -1,3 +1,7 @@
+# [0.2.5] 22-08-16
+
+- 修复：autoupgrade 的 upgrade 函数中 executor 启用 wrap_blank_with_double_quotes 参数。
+
 # [0.2.4] 22-08-16
 
 - 新增： executor.py 添加参数 wrap_blank_with_double_quotes ， 将含有空白字符的内容（命令、参数）用双引号包装。
