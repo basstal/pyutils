@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 import time
 import subprocess
@@ -94,7 +95,7 @@ class Executor:
             os.mkdir(dir)
         return dir
 
-    def execute_by_git_bash(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None):
+    def execute_by_git_bash(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
         """
         将待执行的命令（ cmd 和 args ）写入临时文件中，
         通过 git-bash 程序来运行该临时文件，
@@ -116,13 +117,13 @@ class Executor:
         cmd_line = '{0} {1}'.format(cmd, args)
         with open(tf[1], 'w+') as f:
             f.write(cmd_line)
-        result = self.execute_file(tf[1], None, ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell)
+        result = self.execute_file(tf[1], None, ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
         os.close(tf[0])
         os.unlink(tf[1])
         self.__restore_cwd()
         return result
 
-    def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None):
+    def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
         """
         启动subprocess , 直接执行命令
 
@@ -140,7 +141,13 @@ class Executor:
             Popen env argument
         @shell
             Popen shell argument
+        Args:
+            wrap_blank_with_double_quotes (bool, optional): 将含有空白字符的内容用双引号包装
         """
+        if wrap_blank_with_double_quotes:
+            cmd = cmd if re.search(r'\s', cmd) is None else f'"{cmd}"'
+            if isinstance(args, list):
+                args = [arg if re.search(r'\s', arg) is None else f'"{arg}"' for arg in args]
         args = self.__format_args(args)
         cmd_line = '{0} {1}'.format(cmd, args)
         self.__change_cwd(work_dir)
@@ -321,7 +328,7 @@ class Executor:
             os.chdir(self.previous_cwd)
         self.previous_cwd = None
 
-    def execute_file(self, script, args, work_dir: str = None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True):
+    def execute_file(self, script, args, work_dir: str = None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, wrap_blank_with_double_quotes=False):
         """
         执行脚本文件并传入参数
 
@@ -334,7 +341,7 @@ class Executor:
             exit_at_once (bool, optional): 是否异步执行. Defaults to False.
             env (dict, optional): 传入给 popen 的 env. Defaults to None.
             shell (bool, optional): 传入给 popen 的 shell. Defaults to True.
-
+            wrap_blank_with_double_quotes (bool, optional): 将含有空白字符的内容用双引号包装
         Returns:
             [type]: [description]
         """
@@ -345,10 +352,10 @@ class Executor:
         exe = self.__ext2exe(split_result[1])
         if exe is None:
             result = self.execute_straight(
-                script, args, ignore_error, use_direct_stdout, exit_at_once, env, shell)
+                script, args, ignore_error, use_direct_stdout, exit_at_once, env, shell, wrap_blank_with_double_quotes)
         else:
             result = self.execute_straight(
-                f'{exe} {script}', args, ignore_error, use_direct_stdout, exit_at_once, env, shell)
+                f'{exe} {script}', args, ignore_error, use_direct_stdout, exit_at_once, env, shell, wrap_blank_with_double_quotes)
 
         self.__restore_cwd()
         return result
