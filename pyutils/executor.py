@@ -4,6 +4,7 @@ import tempfile
 import time
 import subprocess
 import sys
+from typing import Union
 import charade
 
 import pyutils.fsext as fsext
@@ -328,7 +329,7 @@ class Executor:
             os.chdir(self.previous_cwd)
         self.previous_cwd = None
 
-    def execute_file(self, script, args: str | list = None, work_dir: str = None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, wrap_blank_with_double_quotes=False):
+    def execute_file(self, script, args: Union[str, list] = None, work_dir: str = None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, wrap_blank_with_double_quotes=False):
         """
         执行脚本文件并传入参数
 
