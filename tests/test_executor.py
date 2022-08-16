@@ -19,8 +19,4 @@ class TestExecutor(unittest.TestCase):
             self.assertEqual(result.out_str, f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
         hello_path = os.path.sep.join(['tests', 'data', 'wrap blank', 'hello.py'])
         hello_result = executor.execute_straight(executable, [hello_path], wrap_blank_with_double_quotes=True, ignore_error=True)
-        print("hello_result.error", hello_result.error)
-        print("hello_result.code", hello_result.code)
-        print("hello_result.out", hello_result.out)
-        print("hello_result.out_str", hello_result.out_str)
         self.assertEqual(hello_result.out_str, "hello")
