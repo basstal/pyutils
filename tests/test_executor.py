@@ -8,6 +8,14 @@ import pyutils.shorthand as sh
 
 
 class TestExecutor(unittest.TestCase):
+
+    def test_executor_execute_file(self):
+        """测试 execute_file 的基本功能"""
+        executor = Executor(True)
+        hello_path = os.path.sep.join(['tests', 'data', 'wrap blank', 'hello.py'])
+        hello_result = executor.execute_file(hello_path, wrap_blank_with_double_quotes=True)
+        self.assertEqual(hello_result.out_str, "hello")
+
     def test_executor_wrap_blank_with_double_quotes(self):
         """测试 executor 自动包装双引号
         """

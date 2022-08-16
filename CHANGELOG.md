@@ -1,3 +1,9 @@
+# [0.2.6] 22-08-16
+
+- 修复： execute_file 调用 execute_straight 参数错误的问题。
+- 修改： execute_file 的 args 默认为 None ，且内部不做 __format_args 的处理，延迟到 execute_straight 再做。
+- 修复： __ext2exe 的 .py 后缀对应可执行文件改为 sys.executable。
+
 # [0.2.5] 22-08-16
 
 - 修复：autoupgrade 的 upgrade 函数中 executor 启用 wrap_blank_with_double_quotes 参数。

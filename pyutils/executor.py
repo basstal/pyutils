@@ -301,7 +301,7 @@ class Executor:
             else:
                 return '/bin/bash'
         if ext.endswith('.py'):
-            return 'python'
+            return sys.executable
 
     def __change_cwd(self, work_dir):
         """修改当前工作目录
@@ -328,7 +328,7 @@ class Executor:
             os.chdir(self.previous_cwd)
         self.previous_cwd = None
 
-    def execute_file(self, script, args, work_dir: str = None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, wrap_blank_with_double_quotes=False):
+    def execute_file(self, script, args: str | list = None, work_dir: str = None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, wrap_blank_with_double_quotes=False):
         """
         执行脚本文件并传入参数
 
@@ -345,17 +345,23 @@ class Executor:
         Returns:
             [type]: [description]
         """
-        args = self.__format_args(args)
         self.__change_cwd(work_dir)
         split_result = os.path.splitext(script)
         result = None
         exe = self.__ext2exe(split_result[1])
         if exe is None:
             result = self.execute_straight(
-                script, args, ignore_error, use_direct_stdout, exit_at_once, env, shell, wrap_blank_with_double_quotes)
+                script, args, ignore_error, use_direct_stdout, exit_at_once, env, shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
         else:
+            if args is None:
+                args = [script]
+            elif isinstance(args, list):
+                args = [script].extend(args)
+            elif isinstance(args, str):
+                # NOTE: 如果 args 是字符串形式的话不做特殊处理，直接拼接
+                args = f'{script} {args}'
             result = self.execute_straight(
-                f'{exe} {script}', args, ignore_error, use_direct_stdout, exit_at_once, env, shell, wrap_blank_with_double_quotes)
+                exe, args, ignore_error, use_direct_stdout, exit_at_once, env, shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
 
         self.__restore_cwd()
         return result
