@@ -1,3 +1,4 @@
+import os
 import re
 import unittest
 import sys
@@ -16,8 +17,8 @@ class TestExecutor(unittest.TestCase):
             self.assertEqual(result.code, 1)
             result = executor.execute_straight(executable, ['--version'], wrap_blank_with_double_quotes=True)
             self.assertEqual(result.out_str, f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
-        hello_path = 'tests\\data\\wrap blank\\hello.py'
-        hello_result = executor.execute_straight(executable, [hello_path], wrap_blank_with_double_quotes=True, ignore_error=True)
+        hello_path = ['tests', 'data', 'wrap blank', 'hello.py']
+        hello_result = executor.execute_straight(executable, [os.path.pathsep.join(hello_path)], wrap_blank_with_double_quotes=True, ignore_error=True)
         print("hello_result.error", hello_result.error)
         print("hello_result.code", hello_result.code)
         print("hello_result.out", hello_result.out)
