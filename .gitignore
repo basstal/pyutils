@@ -15,3 +15,5 @@ __pycache__/
 output/
 
 .vscode/
+# generated files
+test_gbk_encoding

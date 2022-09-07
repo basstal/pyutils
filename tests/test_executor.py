@@ -12,7 +12,8 @@ class TestExecutor(unittest.TestCase):
     def test_executor_execute_file(self):
         """测试 execute_file 的基本功能"""
         executor = Executor(True)
-        hello_path = os.path.sep.join(['tests', 'data', 'wrap blank', 'hello.py'])
+        test_root_dir = os.path.dirname(__file__)
+        hello_path = os.path.join(test_root_dir, 'data/wrap blank/hello.py')
         hello_result = executor.execute_file(hello_path, wrap_blank_with_double_quotes=True)
         self.assertEqual(hello_result.out_str, "hello")
 
@@ -25,6 +26,7 @@ class TestExecutor(unittest.TestCase):
             self.assertEqual(result.code, 1)
             result = executor.execute_straight(executable, ['--version'], wrap_blank_with_double_quotes=True)
             self.assertEqual(result.out_str, f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
-        hello_path = os.path.sep.join(['tests', 'data', 'wrap blank', 'hello.py'])
+        test_root_dir = os.path.dirname(__file__)
+        hello_path = os.path.join(test_root_dir, 'data/wrap blank/hello.py')
         hello_result = executor.execute_straight(executable, [hello_path], wrap_blank_with_double_quotes=True, ignore_error=True)
         self.assertEqual(hello_result.out_str, "hello")

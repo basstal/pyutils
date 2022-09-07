@@ -1,3 +1,8 @@
+# [0.2.7] 22-09-07
+
+- 新增： convert_encoding 猜测当前的文件编码并将其转为一个指定的编码。
+- 修改： detect_encoding 从 executor 模块迁移到 fsext 模块内，旧函数已被标记为 deprecated。
+
 # [0.2.6] 22-08-16
 
 - 修复： execute_file 调用 execute_straight 参数错误的问题。

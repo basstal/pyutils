@@ -6,12 +6,14 @@ import subprocess
 import sys
 from typing import Union
 import charade
+from deprecated import deprecated
 
 import pyutils.fsext as fsext
 import pyutils.simplelogger as logger
 import pyutils.shorthand as shd
 
 
+@deprecated(version='0.2.7', reason="Please use 'from pyutils.fsext import detect_encoding' instead.")
 def detect_encoding(input):
     """
     猜测 bytes | str 的编码

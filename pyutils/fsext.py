@@ -1,9 +1,11 @@
+import codecs
 import ctypes
 import fnmatch
 import glob
 import os
 import shutil
 import base64
+import charade
 
 import pyutils.shorthand as shd
 import pyutils.simplelogger as logger
@@ -12,6 +14,55 @@ import pyutils.simplelogger as logger
 #    文件系统扩展方法    #
 ########################
 ########################
+
+
+def detect_encoding(input):
+    """
+    猜测 bytes | str 的编码
+
+    Args:
+        input (str | bytes): 待猜测的内容
+    """
+    try:
+        # check it in the charade list
+        if isinstance(input, str):
+            return charade.detect(input.encode())
+        # detecting the string
+        else:
+            return charade.detect(input)
+    # in case of error
+    # encode with 'utf -8' encoding
+    except UnicodeDecodeError:
+        return charade.detect(input.encode('utf-8'))
+
+
+def convert_encoding(file_path, target_encoding='utf-8'):
+    """converting the target file encoding.
+
+    Args:
+        file_path (str): target file path
+        target_encoding (str, optional): target encoding to convert. Defaults to 'utf-8'.
+    """
+    if not os.path.exists(file_path) or os.path.isdir(file_path):
+        print(f"{file_path} isn't a valid path to specific file.")
+        return
+    try:
+        with open(file_path, 'rb') as f_in:
+            raw_content = f_in.read()
+        detect_result = detect_encoding(raw_content)
+        if detect_result['confidence'] < 0.9:
+            logger.warning("detect_result confidence less than 0.9,"
+                           f"You should confirm than transform encoding of the file {file_path} manually.")
+            return
+        if detect_result['encoding'] != target_encoding:
+            logger.info(f'{file_path} processed with detect_result {detect_result}.')
+            with codecs.open(file_path, 'r',
+                             encoding=detect_result['encoding']) as f_in:
+                content = f_in.read()
+            with codecs.open(file_path, 'w', encoding=target_encoding) as f_out:
+                f_out.write(content)
+    except IOError as err:
+        logger.error(f"I/O error: {err}")
 
 
 def search(pattern: str, validator=None, params={}):
