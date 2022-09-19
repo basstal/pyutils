@@ -30,3 +30,5 @@ class TestExecutor(unittest.TestCase):
         hello_path = os.path.join(test_root_dir, 'data/wrap blank/hello.py')
         hello_result = executor.execute_straight(executable, [hello_path], wrap_blank_with_double_quotes=True, ignore_error=True)
         self.assertEqual(hello_result.out_str, "hello")
+        result = executor.execute_by_git_bash('echo', 'wrap_blank_with_double_quotes', wrap_blank_with_double_quotes=True)
+        self.assertEqual(result.out_str, 'wrap_blank_with_double_quotes')

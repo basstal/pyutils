@@ -17,3 +17,5 @@ output/
 .vscode/
 # generated files
 test_gbk_encoding
+
+.temp/

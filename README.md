@@ -2,6 +2,12 @@
 
 This package contains self-used utils and 3rd-party source files that can be called from other python modules.
 
+# Install
+
+```
+python3 setup.py install
+```
+
 # Files & Functions
 
 - fsext : file system extension, include search, copy files with filter.

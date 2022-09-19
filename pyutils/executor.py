@@ -148,9 +148,9 @@ class Executor:
             wrap_blank_with_double_quotes (bool, optional): 将含有空白字符的内容用双引号包装
         """
         if wrap_blank_with_double_quotes:
-            cmd = cmd if re.search(r'\s', cmd) is None else f'"{cmd}"'
+            cmd = cmd if re.search(r'\s', cmd) is None or re.search(r'\"', cmd) is not None else f'"{cmd}"'
             if isinstance(args, list):
-                args = [arg if re.search(r'\s', arg) is None else f'"{arg}"' for arg in args]
+                args = [arg if re.search(r'\s', arg) is None or re.search(r'\"', arg) is not None else f'"{arg}"' for arg in args]
         args = self.__format_args(args)
         cmd_line = '{0} {1}'.format(cmd, args)
         self.__change_cwd(work_dir)
