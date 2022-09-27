@@ -1,3 +1,5 @@
+- 修复：修正 detect_encoding 的警告提醒。
+
 # [0.2.8] 22-09-19
 
 - 修复： wrap_blank_with_double_quotes 参数不会错误的包装已经有双引号的内容。

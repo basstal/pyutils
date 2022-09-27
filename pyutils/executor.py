@@ -170,10 +170,10 @@ class Executor:
         else:
             result.out, result.error = pipes.communicate()
             result.out = "" if result.out is None else result.out.strip()
-            error_encoding = detect_encoding(result.error)['encoding']
+            error_encoding = fsext.detect_encoding(result.error)['encoding']
             result.error = "" if result.error is None else str(result.error.strip(), error_encoding if error_encoding is not None else 'utf-8')
             result.code = pipes.returncode
-            out_encoding = detect_encoding(result.out)['encoding']
+            out_encoding = fsext.detect_encoding(result.out)['encoding']
             result.out_str = result.out if isinstance(result.out, str) else str(result.out, out_encoding if out_encoding is not None else 'utf-8')
         if self.verbose:
             logger.info('<= Finished: {0} {1:.2f} seconds'.format(
