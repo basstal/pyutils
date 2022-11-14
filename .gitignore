@@ -19,3 +19,6 @@ output/
 test_gbk_encoding
 
 .temp/
+pyutils_linked/
+tests/data/copy_test/test_copy_file
+tests/data/copy_test/test_copy_folder

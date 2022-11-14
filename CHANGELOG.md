@@ -1,4 +1,10 @@
+# [0.2.9] 22-11-14
+
 - 修复：修正 detect_encoding 的警告提醒。
+- 新增：windows 下可以使用 execute_by_cmd 来使用 cmd 执行命令。
+- 新增：shorthand 新增 is_admin_win 判断是否处在 windows 管理员模式下。
+- 修改：log 的 level 不为 LOG_LEVEL_ERROR 时，输出到 stdout。
+- 修改：copy_files 对于目标文件夹已存在的情况，先删除目标文件夹再调用 shutil.copytree。
 
 # [0.2.8] 22-09-19
 

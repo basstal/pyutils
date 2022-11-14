@@ -98,9 +98,35 @@ class Executor:
             os.mkdir(dir)
         return dir
 
-    def execute_by_git_bash(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
+    def execute_with_tempfile(self, cmd, args, tempfile_ext, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
         """
         将待执行的命令（ cmd 和 args ）写入临时文件中，
+        以后缀名的形式让 OS 决定用什么程序来执行。
+
+        Args:
+            cmd (str): 命令
+            args (list or str): 参数列表
+            tempfile_ext (str): 临时文件的后缀名
+            ignore_error (bool, optional): 是否忽略报错. Defaults to False.
+            use_direct_stdout (bool, optional): 是否将输出接到 sys.stdout . Defaults to False.
+            exit_at_once (bool, optional): 是否在进程开启后直接返回. Defaults to False.
+            env (str, optional): Popen env argument. Defaults to None.
+            shell (bool, optional): Popen shell argument. Defaults to True.
+        """
+        self.__change_cwd(work_dir)
+        tf = tempfile.mkstemp(suffix=tempfile_ext, prefix=None, dir=self.path_to_temp_dir(), text=True)
+        args = self.__format_args(args)
+        cmd_line = '{0} {1}'.format(cmd, args)
+        with open(tf[1], 'w+') as f:
+            f.write(cmd_line)
+        result = self.execute_file(tf[1], None, ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
+        os.close(tf[0])
+        os.unlink(tf[1])
+        self.__restore_cwd()
+        return result
+
+    def execute_by_git_bash(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
+        """
         通过 git-bash 程序来运行该临时文件，
         这是为了解决 windows cmd 对某些特殊字符处理错误的问题。
 
@@ -113,18 +139,24 @@ class Executor:
             env (str, optional): Popen env argument. Defaults to None.
             shell (bool, optional): Popen shell argument. Defaults to True.
         """
+        return self.execute_with_tempfile(cmd, args, '.sh', ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell, work_dir=work_dir, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
 
-        self.__change_cwd(work_dir)
-        tf = tempfile.mkstemp(suffix='.sh', prefix=None, dir=self.path_to_temp_dir(), text=True)
-        args = self.__format_args(args)
-        cmd_line = '{0} {1}'.format(cmd, args)
-        with open(tf[1], 'w+') as f:
-            f.write(cmd_line)
-        result = self.execute_file(tf[1], None, ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
-        os.close(tf[0])
-        os.unlink(tf[1])
-        self.__restore_cwd()
-        return result
+    def execute_by_cmd(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
+        """
+        通过 cmd 程序来运行该临时文件。
+
+        Args:
+            cmd (str): 命令
+            args (list or str): 参数列表
+            ignore_error (bool, optional): 是否忽略报错. Defaults to False.
+            use_direct_stdout (bool, optional): 是否将输出接到 sys.stdout . Defaults to False.
+            exit_at_once (bool, optional): 是否在进程开启后直接返回. Defaults to False.
+            env (str, optional): Popen env argument. Defaults to None.
+            shell (bool, optional): Popen shell argument. Defaults to True.
+        """
+        if not shd.is_win():
+            logger.error('You are not running on Windows!')
+        return self.execute_with_tempfile(cmd, args, '.bat', ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell, work_dir=work_dir, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
 
     def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
         """
@@ -171,6 +203,7 @@ class Executor:
             result.out, result.error = pipes.communicate()
             result.out = "" if result.out is None else result.out.strip()
             error_encoding = fsext.detect_encoding(result.error)['encoding']
+            # python3 str 默认编码为 utf-8
             result.error = "" if result.error is None else str(result.error.strip(), error_encoding if error_encoding is not None else 'utf-8')
             result.code = pipes.returncode
             out_encoding = fsext.detect_encoding(result.out)['encoding']

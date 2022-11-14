@@ -53,7 +53,7 @@ def log(message, level=LOG_LEVEL_NORMAL, noident=False, bold=False):
 
         message += '\n'
 
-        pipe = sys.stdout if level == LOG_LEVEL_NORMAL else sys.stderr
+        pipe = sys.stdout if level != LOG_LEVEL_ERROR else sys.stderr
 
         pipe.write(('' if noident else ('\t' * LOG_INDENT)) + message)
 

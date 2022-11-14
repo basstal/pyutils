@@ -98,8 +98,9 @@ def copy_files(target_path, src_file_list, logs=False):
     """复制并覆盖目标路径下所有同名内容，如果 src_file 是文件夹，使用 shutil.copytree 复制，否则使用 shutil.copy2
 
     Args:
-        target_path (str): 目标路径
-        src_file_list (list): 被复制的文件列表
+        target_path (str): 目标路径。
+        src_file_list (list): 被复制的文件列表。
+        logs (bool) : 是否输出日志。
     """
     for src_file in src_file_list:
         if os.path.exists(src_file):
@@ -117,6 +118,10 @@ def copy_files(target_path, src_file_list, logs=False):
             if os.path.isfile(src_file):
                 shutil.copy2(src_file, deploy_file_path)
             else:
+                if os.path.exists(deploy_file_path):
+                    shutil.rmtree(deploy_file_path)
+                    if logs:
+                        logger.info('Removed => {}'.format(deploy_file_path))
                 shutil.copytree(src_file, deploy_file_path)
             if logs:
                 logger.info('Copy file from {} to => {}'.format(src_file, deploy_file_path))

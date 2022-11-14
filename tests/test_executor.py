@@ -32,3 +32,29 @@ class TestExecutor(unittest.TestCase):
         self.assertEqual(hello_result.out_str, "hello")
         result = executor.execute_by_git_bash('echo', 'wrap_blank_with_double_quotes', wrap_blank_with_double_quotes=True)
         self.assertEqual(result.out_str, 'wrap_blank_with_double_quotes')
+
+    def test_execute_by_cmd(self):
+        """测试 execute_by_cmd 能否正常工作
+        """
+        if sh.is_win():
+            out_str = "You are not in admin mode!"
+            test_bat_content = rf'''
+            @echo off
+            net session >nul 2>&1
+            if %errorlevel% equ 0 (
+                mklink /D pyutils_linked pyutils
+            ) else (
+                echo {out_str}
+            )
+            '''
+            executor = Executor(True)
+            result = executor.execute_by_cmd(test_bat_content, None)
+            if sh.is_admin_win():
+                self.assertTrue(os.path.exists('pyutils_linked'))
+            else:
+                self.assertTrue(result.out_str.endswith(out_str))
+
+    def tearDown(self) -> None:
+        if os.path.exists('pyutils_linked'):
+            os.remove('pyutils_linked')
+        return super().tearDown()
