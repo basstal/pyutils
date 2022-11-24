@@ -252,7 +252,7 @@ def to_base64(src, tar=None):
 
 
 def sync_folder(src_parent_path, dst_path,
-                files_to_sync: list[str],
+                files_to_sync: list,
                 remove_diff=False,
                 compare_content=False,
                 remove_original=False,
