@@ -50,6 +50,9 @@ class ExecuteResult:
         self.exception = None
         self.out_str = None
 
+    def __str__(self) -> str:
+        return f'cmd_line : {str(self.cmd_line)}\ncode : {str(self.code)}\nout : {str(self.out_str)}\n error : {str(self.error)}'
+
 
 class Executor:
 
@@ -63,14 +66,22 @@ class Executor:
     def __init__(self, verbose=True):
         self.verbose = verbose
 
-    def __format_args(self, args):
+    def format_args(self, args):
+        """统一转换命令参数
+
+        Args:
+            args (list | str | None): _description_
+
+        Returns:
+            str: _description_
+        """
         if type(args) is list:
             return ' '.join(args)
         elif type(args) is str:
             return args
         elif args is not None:
             logger.info('Unsupported args type : {}'.format(type(args)))
-        return ' '
+        return ''
 
     def common_error_out(self, result, exit_code=-1):
         """
@@ -115,7 +126,7 @@ class Executor:
         """
         self.__change_cwd(work_dir)
         tf = tempfile.mkstemp(suffix=tempfile_ext, prefix=None, dir=self.path_to_temp_dir(), text=True)
-        args = self.__format_args(args)
+        args = self.format_args(args)
         cmd_line = '{0} {1}'.format(cmd, args)
         with open(tf[1], 'w+') as f:
             f.write(cmd_line)
@@ -158,7 +169,7 @@ class Executor:
             logger.error('You are not running on Windows!')
         return self.execute_with_tempfile(cmd, args, '.bat', ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell, work_dir=work_dir, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
 
-    def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
+    def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False, before_communicate_callback=None):
         """
         启动subprocess , 直接执行命令
 
@@ -177,13 +188,14 @@ class Executor:
         @shell
             Popen shell argument
         Args:
-            wrap_blank_with_double_quotes (bool, optional): 将含有空白字符的内容用双引号包装
+            wrap_blank_with_double_quotes (bool, optional): 将含有空白字符的内容用双引号包装。
+            before_communicate_callback (function) : 在 process 的 communicate 调用前做一些外部处理。
         """
         if wrap_blank_with_double_quotes:
             cmd = cmd if re.search(r'\s', cmd) is None or re.search(r'\"', cmd) is not None else f'"{cmd}"'
             if isinstance(args, list):
                 args = [arg if re.search(r'\s', arg) is None or re.search(r'\"', arg) is not None else f'"{arg}"' for arg in args]
-        args = self.__format_args(args)
+        args = self.format_args(args)
         cmd_line = '{0} {1}'.format(cmd, args)
         self.__change_cwd(work_dir)
 
@@ -193,19 +205,20 @@ class Executor:
             logger.info('=> Shell: {}'.format(cmd_line), True)
 
         start_time = time.time()
-        pipes = subprocess.Popen(cmd_line, stdout=sys.stdout if use_direct_stdout else subprocess.PIPE,
-                                 stderr=subprocess.PIPE, env=env, shell=shell)
+        process = subprocess.Popen(cmd_line, stdout=sys.stdout if use_direct_stdout else subprocess.PIPE,
+                                   stderr=subprocess.PIPE, env=env, shell=shell)
+        before_communicate_callback and before_communicate_callback(process)
         result = ExecuteResult()
         result.cmd_line = cmd_line
         if exit_at_once:
             result.code = 0
         else:
-            result.out, result.error = pipes.communicate()
+            result.out, result.error = process.communicate()
             result.out = "" if result.out is None else result.out.strip()
             error_encoding = fsext.detect_encoding(result.error)['encoding']
             # python3 str 默认编码为 utf-8
             result.error = "" if result.error is None else str(result.error.strip(), error_encoding if error_encoding is not None else 'utf-8')
-            result.code = pipes.returncode
+            result.code = process.returncode
             out_encoding = fsext.detect_encoding(result.out)['encoding']
             result.out_str = result.out if isinstance(result.out, str) else str(result.out, out_encoding if out_encoding is not None else 'utf-8')
         if self.verbose:
@@ -402,6 +415,7 @@ class Executor:
         self.__restore_cwd()
         return result
 
+    @deprecated(version='0.2.9', reason="You should always use importlib and sys.modules for python module execution.")
     def execute_module(self, module, *module_parameters):
         logger.LOG_INDENT += 1
 

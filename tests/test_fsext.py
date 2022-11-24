@@ -1,4 +1,5 @@
 import shutil
+import time
 import unittest
 import pyutils.fsext as fs
 import os
@@ -9,6 +10,16 @@ class TestFsext(unittest.TestCase):
     def setUp(self) -> None:
         self.test_root_dir = os.path.dirname(__file__)
         return super().setUp()
+
+    def tearDown(self) -> None:
+        target_dir = os.path.join(self.test_root_dir, 'sync_data')
+        if os.path.exists(target_dir):
+            shutil.rmtree(target_dir)
+
+        target_dir = os.path.join(self.test_root_dir, 'sync_data1')
+        if os.path.exists(target_dir):
+            shutil.rmtree(target_dir)
+        return super().tearDown()
 
     def test_to_base64(self):
         cwd = os.getcwd()
@@ -61,3 +72,64 @@ class TestFsext(unittest.TestCase):
             lines = f.readlines()
         content = '\n'.join(lines)
         self.assertTrue('add more info' not in content)
+
+    def test_get_dirs(self):
+        """get_dirs 获得指定目录下所有文件夹
+        """
+        target_path = os.path.join(self.test_root_dir, 'data/get_dirs')
+        result_dirs = fs.get_dirs(target_path)
+        self.assertTrue(len(result_dirs) == 1)
+        result_dirs = fs.get_dirs(target_path, ignore_hidden=False)
+        self.assertTrue(len(result_dirs) == 2)
+        result_dirs = fs.get_dirs(target_path, recursive=True, ignore_hidden=False)
+        self.assertTrue(len(result_dirs) == 4)
+
+    def test_sync_folder(self):
+        """sync_folder 同步两个目录内的内容
+        """
+        src_path = os.path.join(self.test_root_dir, 'data')
+        target_path = os.path.join(self.test_root_dir, 'sync_data')
+        # sync_folder simple
+        files = fs.get_files(src_path, ['*.py'])
+        sync_result = fs.sync_folder(src_path, target_path, files)
+        self.assertTrue(sync_result)
+        tmp_py = os.path.join(target_path, 'tmp.py')
+        with open(tmp_py, 'w') as f:
+            f.write('print("hello")')
+        target_files = fs.get_files(target_path, ['*.py'])
+        another_target_path = os.path.join(self.test_root_dir, 'sync_data1')
+        sync_result = fs.sync_folder(target_path, another_target_path, target_files)
+        self.assertTrue(sync_result)
+        # sync_folder with remove_diff
+        os.remove(tmp_py)
+        sync_result = fs.sync_folder(target_path, another_target_path, target_files, remove_diff=True)
+        self.assertTrue(sync_result)
+        self.assertFalse(os.path.exists(os.path.join(another_target_path, 'tmp.py')))
+        time.sleep(0.1)
+        from pathlib import Path
+        src_touch_py = os.path.join(src_path, 'touch_me.py')
+        Path(src_touch_py).touch()
+        sync_result = fs.sync_folder(src_path, another_target_path, files, remove_diff=True)
+        self.assertTrue(sync_result)
+        another_target_touch_py = os.path.join(another_target_path, 'touch_me.py')
+        target_touch_py = os.path.join(target_path, 'touch_me.py')
+        self.assertTrue(os.path.getmtime(another_target_touch_py) - os.path.getmtime(target_touch_py) > 1)
+        self.assertTrue(os.path.getmtime(src_touch_py) - os.path.getmtime(another_target_touch_py) <= 1)
+        sync_result = fs.sync_folder(target_path, another_target_path, target_files, remove_diff=True, compare_content=True)
+        self.assertFalse(sync_result)
+        with open(target_touch_py, 'a') as f:
+            f.write('\n# add something new')
+        sync_result = fs.sync_folder(target_path, another_target_path, target_files, remove_diff=True, compare_content=True)
+        self.assertTrue(sync_result)
+        with open(target_touch_py, 'r') as f:
+            target_touch_content = ''.join(f.readlines())
+        with open(another_target_touch_py, 'r') as f:
+            another_target_touch_content = ''.join(f.readlines())
+        self.assertEqual(target_touch_content, another_target_touch_content)
+        sync_result = fs.sync_folder(target_path, another_target_path, target_files, remove_diff=True, compare_content=True, remove_original=True)
+        self.assertTrue(sync_result)
+        self.assertFalse(os.path.exists(target_touch_py))
+
+        files = fs.get_dirs(src_path, True)
+        sync_result = fs.sync_folder(src_path, target_path, files, remove_diff=True)
+        self.assertTrue(sync_result)

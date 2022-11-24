@@ -22,3 +22,5 @@ test_gbk_encoding
 pyutils_linked/
 tests/data/copy_test/test_copy_file
 tests/data/copy_test/test_copy_folder
+tests/sync_data
+tests/sync_data1

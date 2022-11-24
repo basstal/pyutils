@@ -1,10 +1,12 @@
 import codecs
 import ctypes
+import filecmp
 import fnmatch
 import glob
 import os
 import shutil
 import base64
+import stat
 import charade
 
 import pyutils.shorthand as shd
@@ -152,7 +154,32 @@ def get_all_volumes_win():
         return legal_volumes
 
 
-def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_links=False, recursive=True, apply_ignore_when_conflick=True):
+def get_dirs(work_dir, recursive=False, ignore_hidden=True):
+    """获取指定路径下所有文件夹
+
+    Args:
+        work_dir (str): _description_
+        recursive (bool, optional): _description_. Defaults to False.
+        ignore_hidden (bool, optional): _description_. Defaults to True.
+
+    Returns:
+        list[str]: 文件夹列表
+    """
+    def has_hidden_attribute(filepath):
+        return bool(os.stat(filepath).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)
+    result = []
+    if os.path.isdir(work_dir):
+        list_dirs = [os.path.join(work_dir, name) for name in os.listdir(work_dir) if os.path.isdir(os.path.join(work_dir, name))]
+        if ignore_hidden:
+            list_dirs = [dir for dir in list_dirs if not has_hidden_attribute(dir)]
+        result.extend(list_dirs)
+        if recursive:
+            for dir in list_dirs:
+                result.extend(get_dirs(dir, recursive, ignore_hidden))
+    return result
+
+
+def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_links=False, recursive=True, apply_ignore_when_conflict=True):
     """
     NOTE:这里的 patterns 用的是 UNIX 通配符，而非语言正则表达式
     TODO: replace with glob.glob
@@ -181,7 +208,7 @@ def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_link
                     if include_patterns is not None:
                         for include_pattern in include_patterns:
                             match_result = fnmatch.fnmatch(full_path, include_pattern)
-                            if apply_ignore_when_conflick:
+                            if apply_ignore_when_conflict:
                                 valid = match_result and valid
                             else:
                                 valid = match_result or valid
@@ -214,3 +241,98 @@ def to_base64(src, tar=None):
         with open(tar, 'w+', encoding='utf-8') as f:
             f.write(content)
     return content
+
+
+def sync_folder(src_parent_path, dst_path,
+                files_to_sync: list[str],
+                remove_diff=False,
+                compare_content=False,
+                remove_original=False,
+                logs: bool = False):
+    """同步两个目录内的内容
+    如果同步过程中有任何修改返回 True 否则返回 False
+
+    Args:
+        src_path (_type_): 待同步的目录
+        dst_path (_type_): 同步的目标目录
+        files_to_sync (_type_, optional): _description_. Defaults to None.
+        remove_diff (bool, optional): 删除本地不存在而同步目标内存在的文件，并清理同步目标的空目录
+        compare_content (bool, optional): 是否使用 filecmp.cmp 比较，否则仅比较 mtime. Defaults to False.
+        remove_original (bool, optional): 是否在同步后删除源文件. Defaults to False.
+    """
+    def path_is_parent(parent_path, child_path):
+        # Smooth out relative path names, note: if you are concerned about symbolic links, you should use os.path.realpath too
+        parent_path = os.path.abspath(parent_path)
+        child_path = os.path.abspath(child_path)
+
+        # Compare the common path of the parent and child path with the common path of just the parent path. Using the commonpath method on just the parent path will regularise the path name in the same way as the comparison that deals with both paths, removing any trailing path separator
+        return os.path.commonpath([parent_path]) == os.path.commonpath([parent_path, child_path])
+
+    def make_parent_dir_if_absent(path):
+        """如果父级目录不存在则构造父级目录
+
+        Args:
+            path (_type_): _description_
+        """
+        dst_dir = os.path.dirname(path)
+        if not os.path.exists(dst_dir):
+            os.makedirs(dst_dir)
+            if logs:
+                logger.info('Makedirs => {}'.format(dst_dir))
+
+    if src_parent_path is None or not os.path.isdir(src_parent_path) or dst_path is None or files_to_sync is None:
+        return False
+
+    src_parent_path = os.path.realpath(src_parent_path)
+    dst_path = os.path.realpath(dst_path)
+    # 清理相对目录不对的文件
+    abs_src_pathes = [os.path.realpath(file) for file in files_to_sync if os.path.realpath(file).startswith(src_parent_path)]
+    # 清理不存在的文件
+    abs_src_pathes = [path for path in abs_src_pathes if os.path.exists(path)]
+    # 清理递归的目录
+    abs_dirs = [path for path in abs_src_pathes if os.path.isdir(path)]
+    abs_src_pathes = [path for path in abs_src_pathes if not os.path.isdir(path) or not any([path_is_parent(other_dir, path) for other_dir in abs_dirs if other_dir != path])]
+    if len(abs_src_pathes) == 0:
+        return False
+
+    sync_result = False
+    if remove_diff:
+        dst_files = get_files(dst_path)
+        for dst_file in dst_files:
+            rel_dst_path = os.path.relpath(dst_file, dst_path)
+            reflected_src_path = os.path.join(src_parent_path, rel_dst_path)
+            if not os.path.isfile(reflected_src_path):
+                # dst_file 不会是目录
+                sync_result = True
+                os.remove(dst_file)
+
+        # 清理空目录，因为刚才删除了一波文件，再清空文件目录即可得到与源目标同步的目录结构
+        folders = list(os.walk(dst_path))[1:]
+        for folder in folders:
+            # folder example: ('FOLDER/3', [], ['file'])
+            if not folder[2]:
+                sync_result = True
+                os.rmdir(folder[0])
+
+    for abs_src_path in abs_src_pathes:
+        rel_dst_path = os.path.relpath(abs_src_path, src_parent_path)
+        dst_file = os.path.join(dst_path, rel_dst_path)
+        if os.path.isfile(abs_src_path):
+            need_sync = not os.path.isfile(dst_file) or (not filecmp.cmp(abs_src_path, dst_file) if compare_content else os.path.getmtime(abs_src_path) - os.path.getmtime(dst_file) > 1)
+            # for files
+            if need_sync:
+                sync_result = True
+                # 先检查父级目录是否存在
+                make_parent_dir_if_absent(dst_file)
+                shutil.copy2(abs_src_path, dst_file)
+            if remove_original:
+                sync_result = True
+                os.remove(abs_src_path)
+        else:
+            # for dirs
+            make_parent_dir_if_absent(dst_file)
+            sync_result = True
+            shutil.copytree(abs_src_path, dst_file)
+            if remove_original:
+                shutil.rmtree(abs_src_path)
+    return sync_result
