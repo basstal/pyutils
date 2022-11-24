@@ -77,11 +77,11 @@ class TestFsext(unittest.TestCase):
         """get_dirs 获得指定目录下所有文件夹
         """
         target_path = os.path.join(self.test_root_dir, 'data/get_dirs')
-        result_dirs = fs.get_dirs(target_path)
+        result_dirs = fs.get_dirs(target_path, ignore_patterns=['**/.svn'])
         self.assertTrue(len(result_dirs) == 1)
-        result_dirs = fs.get_dirs(target_path, ignore_hidden=False)
+        result_dirs = fs.get_dirs(target_path)
         self.assertTrue(len(result_dirs) == 2)
-        result_dirs = fs.get_dirs(target_path, recursive=True, ignore_hidden=False)
+        result_dirs = fs.get_dirs(target_path, recursive=True)
         self.assertTrue(len(result_dirs) == 4)
 
     def test_sync_folder(self):

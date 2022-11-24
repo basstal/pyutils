@@ -6,7 +6,6 @@ import glob
 import os
 import shutil
 import base64
-import stat
 import charade
 
 import pyutils.shorthand as shd
@@ -154,28 +153,34 @@ def get_all_volumes_win():
         return legal_volumes
 
 
-def get_dirs(work_dir, recursive=False, ignore_hidden=True):
+def get_dirs(work_dir, recursive=False, ignore_patterns=None):
     """获取指定路径下所有文件夹
 
     Args:
         work_dir (str): _description_
         recursive (bool, optional): _description_. Defaults to False.
-        ignore_hidden (bool, optional): _description_. Defaults to True.
+        ignore_patterns (list[str], optional): 文件忽略规则. Defaults to True.
 
     Returns:
         list[str]: 文件夹列表
     """
-    def has_hidden_attribute(filepath):
-        return bool(os.stat(filepath).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)
+    def match_ignore_pattern(dir):
+        if ignore_patterns is not None:
+            valid = True
+            for ignore_pattern in ignore_patterns:
+                match_result = fnmatch.fnmatch(dir, ignore_pattern)
+                valid = valid and not match_result
+                if not valid:
+                    return True
+        return False
     result = []
     if os.path.isdir(work_dir):
         list_dirs = [os.path.join(work_dir, name) for name in os.listdir(work_dir) if os.path.isdir(os.path.join(work_dir, name))]
-        if ignore_hidden:
-            list_dirs = [dir for dir in list_dirs if not has_hidden_attribute(dir)]
+        list_dirs = [dir for dir in list_dirs if not match_ignore_pattern(dir)]
         result.extend(list_dirs)
         if recursive:
             for dir in list_dirs:
-                result.extend(get_dirs(dir, recursive, ignore_hidden))
+                result.extend(get_dirs(dir, recursive, ignore_patterns))
     return result
 
 
@@ -183,6 +188,9 @@ def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_link
     """
     NOTE:这里的 patterns 用的是 UNIX 通配符，而非语言正则表达式
     TODO: replace with glob.glob
+    Args:
+        ignore_patterns (list[str], optional): 文件忽略规则. Defaults to True.
+
     """
     if os.path.isfile(work_dir):
         result = [work_dir]
@@ -248,7 +256,7 @@ def sync_folder(src_parent_path, dst_path,
                 remove_diff=False,
                 compare_content=False,
                 remove_original=False,
-                logs: bool = False):
+                verbose=False):
     """同步两个目录内的内容
     如果同步过程中有任何修改返回 True 否则返回 False
 
@@ -277,7 +285,7 @@ def sync_folder(src_parent_path, dst_path,
         dst_dir = os.path.dirname(path)
         if not os.path.exists(dst_dir):
             os.makedirs(dst_dir)
-            if logs:
+            if verbose:
                 logger.info('Makedirs => {}'.format(dst_dir))
 
     if src_parent_path is None or not os.path.isdir(src_parent_path) or dst_path is None or files_to_sync is None:
