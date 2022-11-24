@@ -1,3 +1,13 @@
+# [0.2.11] 22-11-24
+
+- 修改：sync_folder 对于 files_to_sync 获取绝对路径时会修改工作目录到 src_parent_path。
+
+# [0.2.10] 22-11-24
+
+- 新增：fsext sync_folder 和 get_dirs 函数。
+- 新增：execute_straight 添加能够 hook 到 process 的 callback。
+- 新增：format_args 函数改为 public。
+
 # [0.2.9] 22-11-14
 
 - 修复：修正 detect_encoding 的警告提醒。

@@ -293,8 +293,11 @@ def sync_folder(src_parent_path, dst_path,
 
     src_parent_path = os.path.realpath(src_parent_path)
     dst_path = os.path.realpath(dst_path)
+    previous_cwd = os.getcwd()
+    os.chdir(src_parent_path)
     # 清理相对目录不对的文件
     abs_src_pathes = [os.path.realpath(file) for file in files_to_sync if os.path.realpath(file).startswith(src_parent_path)]
+    os.chdir(previous_cwd)
     # 清理不存在的文件
     abs_src_pathes = [path for path in abs_src_pathes if os.path.exists(path)]
     # 清理递归的目录
