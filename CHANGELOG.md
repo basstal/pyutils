@@ -1,3 +1,9 @@
+# [0.2.12] 22-11-30
+
+
+- 修复：sync_folder 使用 remove_empty_dirs 函数修复不正确的逻辑。
+- 修改：Executor 输出详情时带上 WorkDir。
+
 # [0.2.11] 22-11-24
 
 - 修改：sync_folder 对于 files_to_sync 获取绝对路径时会修改工作目录到 src_parent_path。

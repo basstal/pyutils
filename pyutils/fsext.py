@@ -288,6 +288,16 @@ def sync_folder(src_parent_path, dst_path,
             if verbose:
                 logger.info('Makedirs => {}'.format(dst_dir))
 
+    def remove_empty_dirs(folder):
+        if os.path.isdir(folder):
+            for file in os.listdir(folder):
+                sub_folder = os.path.join(folder, file)
+                if os.path.isdir(sub_folder):
+                    remove_empty_dirs(sub_folder)
+
+            if len(os.listdir(folder)) == 0:
+                os.rmdir(folder)
+
     if src_parent_path is None or not os.path.isdir(src_parent_path) or dst_path is None or files_to_sync is None:
         return False
 
@@ -318,12 +328,7 @@ def sync_folder(src_parent_path, dst_path,
                 os.remove(dst_file)
 
         # 清理空目录，因为刚才删除了一波文件，再清空文件目录即可得到与源目标同步的目录结构
-        folders = list(os.walk(dst_path))[1:]
-        for folder in folders:
-            # folder example: ('FOLDER/3', [], ['file'])
-            if not folder[2]:
-                sync_result = True
-                os.rmdir(folder[0])
+        remove_empty_dirs(dst_path)
 
     for abs_src_path in abs_src_pathes:
         rel_dst_path = os.path.relpath(abs_src_path, src_parent_path)

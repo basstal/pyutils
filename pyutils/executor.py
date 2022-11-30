@@ -80,7 +80,7 @@ class Executor:
         elif type(args) is str:
             return args
         elif args is not None:
-            logger.info('Unsupported args type : {}'.format(type(args)))
+            logger.info(f'Unsupported args type : {type(args)}')
         return ''
 
     def common_error_out(self, result, exit_code=-1):
@@ -126,8 +126,7 @@ class Executor:
         """
         self.__change_cwd(work_dir)
         tf = tempfile.mkstemp(suffix=tempfile_ext, prefix=None, dir=self.path_to_temp_dir(), text=True)
-        args = self.format_args(args)
-        cmd_line = '{0} {1}'.format(cmd, args)
+        cmd_line = f'{cmd} {self.format_args(args)}'
         with open(tf[1], 'w+') as f:
             f.write(cmd_line)
         result = self.execute_file(tf[1], None, ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
@@ -195,14 +194,15 @@ class Executor:
             cmd = cmd if re.search(r'\s', cmd) is None or re.search(r'\"', cmd) is not None else f'"{cmd}"'
             if isinstance(args, list):
                 args = [arg if re.search(r'\s', arg) is None or re.search(r'\"', arg) is not None else f'"{arg}"' for arg in args]
-        args = self.format_args(args)
-        cmd_line = '{0} {1}'.format(cmd, args)
+        cmd_line = f'{cmd} {self.format_args(args)}'
         self.__change_cwd(work_dir)
 
         if self.verbose:
             logger.LOG_INDENT
             logger.LOG_INDENT += 1
-            logger.info('=> Shell: {}'.format(cmd_line), True)
+            logger.info(f'=> Shell: {cmd_line}', True)
+            if work_dir is not None:
+                logger.info(f'=> WorkDir: {work_dir}', True)
 
         start_time = time.time()
         process = subprocess.Popen(cmd_line, stdout=sys.stdout if use_direct_stdout else subprocess.PIPE,
@@ -222,8 +222,7 @@ class Executor:
             out_encoding = fsext.detect_encoding(result.out)['encoding']
             result.out_str = result.out if isinstance(result.out, str) else str(result.out, out_encoding if out_encoding is not None else 'utf-8')
         if self.verbose:
-            logger.info('<= Finished: {0} {1:.2f} seconds'.format(
-                os.path.basename(cmd), time.time() - start_time), True)
+            logger.info(f'<= Finished: {os.path.basename(cmd)} {time.time() - start_time:.2f} seconds', True)
 
         if not ignore_error and result.code != 0:
             self.common_error_out(result)
@@ -296,7 +295,6 @@ class Executor:
             value = value[:-1] + '/'
         # 运行设置环境变量命令
         bat_cmd = self.ADD_ENV.format(user='me', key=key, value=value, override=override)
-        # info('=> run cmd : \n {}'.format(bat_cmd))
         tf = tempfile.mkstemp(suffix='.bat', prefix=None, dir=self.path_to_temp_dir(), text=True)
         with open(tf[1], 'w+', encoding='utf-8') as f:
             f.write(bat_cmd)
@@ -304,9 +302,9 @@ class Executor:
         os.close(tf[0])
         os.unlink(tf[1])
         if override:
-            logger.info('=> Set system environment {0}={1} finished.'.format(key, value))
+            logger.info(f'=> Set system environment {key}={value} finished.')
         else:
-            logger.info('=> Append {1} to system environment key {0}.'.format(key, value))
+            logger.info(f'=> Append {key} to system environment key {value}.')
 
     def get_git_path(self):
         """
@@ -346,7 +344,8 @@ class Executor:
         if ext.endswith('.sh'):
             if shd.is_win():
                 # NOTE:windows调用sh
-                return '"{}"'.format(os.path.join(self.get_git_path(), 'usr/bin/bash.exe'))
+                p = os.path.join(self.get_git_path(), 'usr/bin/bash.exe')
+                return f'"{p}"'
             else:
                 return '/bin/bash'
         if ext.endswith('.py'):
