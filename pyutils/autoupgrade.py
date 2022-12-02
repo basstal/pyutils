@@ -1,5 +1,6 @@
 import sys
-import urllib.request
+from urllib.request import urlopen, Request
+import ssl
 import re
 from os import execl, environ
 from sys import executable
@@ -112,7 +113,11 @@ class AutoUpgrade(object):
 
     def get_highest_version(self):
         url = "{}/{}/".format(self.index, self.pkgFormatted)
-        html = urllib.request.urlopen(url)
+        # bypass CA problem on MacOS
+        # https://stackoverflow.com/questions/2792650/import-error-no-module-name-urllib2
+        req = Request(url, headers={'X-Mashape-Key': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'})
+        gcontext = ssl.SSLContext()  # Only for gangstars
+        html = urlopen(req, context=gcontext)
         if html.getcode() != 200:
             raise PkgNotFoundError
         soup = BeautifulSoup(html.read(), features="html.parser")
