@@ -4,13 +4,14 @@ import tempfile
 import time
 import subprocess
 import sys
-from typing import Union
 import charade
-from deprecated import deprecated
-
+import signal
 import pyutils.fsext as fsext
 import pyutils.simplelogger as logger
 import pyutils.shorthand as shd
+from typing import Union
+from deprecated import deprecated
+from threading import Thread, Event
 
 
 @deprecated(version='0.2.7', reason="Please use 'from pyutils.fsext import detect_encoding' instead.")
@@ -213,14 +214,30 @@ class Executor:
         if exit_at_once:
             result.code = 0
         else:
-            result.out, result.error = process.communicate()
-            result.out = "" if result.out is None else result.out.strip()
-            error_encoding = fsext.detect_encoding(result.error)['encoding']
-            # python3 str 默认编码为 utf-8
-            result.error = "" if result.error is None else str(result.error.strip(), error_encoding if error_encoding is not None else 'utf-8')
-            result.code = process.returncode
-            out_encoding = fsext.detect_encoding(result.out)['encoding']
-            result.out_str = result.out if isinstance(result.out, str) else str(result.out, out_encoding if out_encoding is not None else 'utf-8')
+            def stop_process(*args):
+                logger.error(f'The shell process[{process.pid}] have been killed!')
+                process.kill()
+                sys.exit(-1)
+
+            event = Event()
+            signal.signal(signal.SIGINT, stop_process)
+            signal.signal(signal.SIGTERM, stop_process)
+
+            def run():
+                result.out, result.error = process.communicate()
+                result.out = "" if result.out is None else result.out.strip()
+                error_encoding = fsext.detect_encoding(result.error)['encoding']
+                # python3 str 默认编码为 utf-8
+                result.error = "" if result.error is None else str(result.error.strip(), error_encoding if error_encoding is not None else 'utf-8')
+                result.code = process.returncode
+                out_encoding = fsext.detect_encoding(result.out)['encoding']
+                result.out_str = result.out if isinstance(result.out, str) else str(result.out, out_encoding if out_encoding is not None else 'utf-8')
+                event.set()
+            # NOTE:executor popen communicate in another thread for receive kill command
+            thread = Thread(target=run, daemon=True)
+            thread.start()
+            while not event.is_set():
+                time.sleep(0)
         if self.verbose:
             logger.info(f'<= Finished: {os.path.basename(cmd)} {time.time() - start_time:.2f} seconds', True)
 

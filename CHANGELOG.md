@@ -1,3 +1,7 @@
+# [0.2.14] 22-12-06
+
+- 修改：Popen 的 process.communicate() 包装为 Thread ，以接收来自用户的中断信号。
+
 # [0.2.13] 22-12-02
 
 - 修复：urllib 绕过 MacOS 的 CA 问题。
