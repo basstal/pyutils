@@ -1,3 +1,7 @@
+# [0.2.15] 22-12-15
+
+- 修改：Popen shell 为 True 时使用 str 作为 args，否则使用 list 作为 args。
+
 # [0.2.14] 22-12-06
 
 - 修改：Popen 的 process.communicate() 包装为 Thread ，以接收来自用户的中断信号。

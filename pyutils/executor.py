@@ -1,5 +1,6 @@
 import os
 import re
+import shlex
 import tempfile
 import time
 import subprocess
@@ -81,7 +82,7 @@ class Executor:
         elif type(args) is str:
             return args
         elif args is not None:
-            logger.info(f'Unsupported args type : {type(args)}')
+            logger.error(f'Unsupported args type : {type(args)}')
         return ''
 
     def common_error_out(self, result, exit_code=-1):
@@ -195,22 +196,36 @@ class Executor:
             cmd = cmd if re.search(r'\s', cmd) is None or re.search(r'\"', cmd) is not None else f'"{cmd}"'
             if isinstance(args, list):
                 args = [arg if re.search(r'\s', arg) is None or re.search(r'\"', arg) is not None else f'"{arg}"' for arg in args]
-        cmd_line = f'{cmd} {self.format_args(args)}'
+        joined_args = f'{cmd} {self.format_args(args)}'
+        # ref to https://docs.python.org/2/library/subprocess.html#module-subprocess
+        # if shell than passing string else passing sequence
+        if shell:
+            popen_args = joined_args
+        else:
+            popen_args = [cmd]
+            if isinstance(args, str):
+                popen_args.extend(shlex.split(args))
+            elif isinstance(args, list):
+                popen_args.extend(args)
+            else:
+                logger.error(f'Unsupported args type : {type(args)}')
+
         self.__change_cwd(work_dir)
 
         if self.verbose:
             logger.LOG_INDENT
             logger.LOG_INDENT += 1
-            logger.info(f'=> Shell: {cmd_line}', True)
+            via = 'Shell' if shell else 'Program'
+            logger.info(f'=> Exec[{via}]: {joined_args}', True)
             if work_dir is not None:
                 logger.info(f'=> WorkDir: {work_dir}', True)
 
         start_time = time.time()
-        process = subprocess.Popen(cmd_line, stdout=sys.stdout if use_direct_stdout else subprocess.PIPE,
+        process = subprocess.Popen(popen_args, stdout=sys.stdout if use_direct_stdout else subprocess.PIPE,
                                    stderr=subprocess.PIPE, env=env, shell=shell)
         before_communicate_callback and before_communicate_callback(process)
         result = ExecuteResult()
-        result.cmd_line = cmd_line
+        result.cmd_line = joined_args
         if exit_at_once:
             result.code = 0
         else:
