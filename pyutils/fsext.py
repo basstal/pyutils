@@ -305,8 +305,8 @@ def sync_folder(src_parent_path, dst_path,
     dst_path = os.path.realpath(dst_path)
     previous_cwd = os.getcwd()
     os.chdir(src_parent_path)
-    # 清理相对目录不对的文件
-    abs_src_pathes = [os.path.realpath(file) for file in files_to_sync if os.path.realpath(file).startswith(src_parent_path)]
+    # 清理相对目录不对的文件 （此处默认了不区分大小写的文件系统）
+    abs_src_pathes = [os.path.realpath(file) for file in files_to_sync if os.path.realpath(file).lower().startswith(src_parent_path.lower())]
     os.chdir(previous_cwd)
     # 清理不存在的文件
     abs_src_pathes = [path for path in abs_src_pathes if os.path.exists(path)]
@@ -331,7 +331,8 @@ def sync_folder(src_parent_path, dst_path,
         remove_empty_dirs(dst_path)
 
     for abs_src_path in abs_src_pathes:
-        rel_dst_path = os.path.relpath(abs_src_path, src_parent_path)
+        # 此处默认了不区分大小写的文件系统
+        rel_dst_path = os.path.relpath(abs_src_path.lower(), src_parent_path.lower())
         dst_file = os.path.join(dst_path, rel_dst_path)
         if os.path.isfile(abs_src_path):
             need_sync = not os.path.isfile(dst_file) or (not filecmp.cmp(abs_src_path, dst_file) if compare_content else os.path.getmtime(abs_src_path) - os.path.getmtime(dst_file) > 1)
