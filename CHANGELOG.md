@@ -1,5 +1,6 @@
 # [0.2.15] 22-12-19
 
+- 修复：sync_folder 删除 symlink 文件夹失败的问题。
 - 修复：sync_folder 清理相对目录不对的文件时，按不区分大小写的文件系统规则处理路径。
 - 修改：Popen shell 为 True 时使用 str 作为 args，否则使用 list 作为 args。
 

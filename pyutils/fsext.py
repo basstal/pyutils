@@ -294,8 +294,8 @@ def sync_folder(src_parent_path, dst_path,
                 sub_folder = os.path.join(folder, file)
                 if os.path.isdir(sub_folder):
                     remove_empty_dirs(sub_folder)
-
-            if len(os.listdir(folder)) == 0:
+            # can't remove symlink folder
+            if len(os.listdir(folder)) == 0 and not os.path.islink(folder):
                 os.rmdir(folder)
 
     if src_parent_path is None or not os.path.isdir(src_parent_path) or dst_path is None or files_to_sync is None:
