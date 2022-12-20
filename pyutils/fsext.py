@@ -331,8 +331,7 @@ def sync_folder(src_parent_path, dst_path,
         remove_empty_dirs(dst_path)
 
     for abs_src_path in abs_src_pathes:
-        # 此处默认了不区分大小写的文件系统
-        rel_dst_path = os.path.relpath(abs_src_path.lower(), src_parent_path.lower())
+        rel_dst_path = os.path.relpath(abs_src_path, src_parent_path)
         dst_file = os.path.join(dst_path, rel_dst_path)
         if os.path.isfile(abs_src_path):
             need_sync = not os.path.isfile(dst_file) or (not filecmp.cmp(abs_src_path, dst_file) if compare_content else os.path.getmtime(abs_src_path) - os.path.getmtime(dst_file) > 1)
