@@ -1,3 +1,7 @@
+# [0.2.16] 
+
+- 修复：executor 解决 shell 为 False 的情况下如果包装了 cmd 在 windows 上会出现 ‘PermissionError: [WinError 5] 拒绝访问。’ 的问题。
+
 # [0.2.15] 22-12-21
 
 - 修复：sync_folder 删除 symlink 文件夹失败的问题。

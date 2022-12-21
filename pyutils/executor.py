@@ -193,7 +193,8 @@ class Executor:
             before_communicate_callback (function) : 在 process 的 communicate 调用前做一些外部处理。
         """
         if wrap_blank_with_double_quotes:
-            cmd = cmd if re.search(r'\s', cmd) is None or re.search(r'\"', cmd) is not None else f'"{cmd}"'
+            # NOTE: shell 为 False 的情况下如果包装了 cmd 在 windows 上会出现 ‘PermissionError: [WinError 5] 拒绝访问。’ 的问题。
+            cmd = cmd if not shell or re.search(r'\s', cmd) is None or re.search(r'\"', cmd) is not None else f'"{cmd}"'
             if isinstance(args, list):
                 args = [arg if re.search(r'\s', arg) is None or re.search(r'\"', arg) is not None else f'"{arg}"' for arg in args]
         joined_args = f'{cmd} {self.format_args(args)}'
