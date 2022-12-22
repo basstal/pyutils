@@ -1,4 +1,4 @@
-# [0.2.16] 
+# [0.2.16] 22-12-22
 
 - 修复：executor 解决 shell 为 False 的情况下如果包装了 cmd 在 windows 上会出现 ‘PermissionError: [WinError 5] 拒绝访问。’ 的问题。
 
