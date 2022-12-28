@@ -192,6 +192,9 @@ class Executor:
             wrap_blank_with_double_quotes (bool, optional): 将含有空白字符的内容用双引号包装。
             before_communicate_callback (function) : 在 process 的 communicate 调用前做一些外部处理。
         """
+        # NOTE:on windows and shell set to True, any path with double slashes will cause Popen to fail ( maybe it is caused by the shell ). so we normpath the cmd.
+        if shell:
+            cmd = os.path.normpath(cmd)
         if wrap_blank_with_double_quotes:
             # NOTE: shell 为 False 的情况下如果包装了 cmd 在 windows 上会出现 ‘PermissionError: [WinError 5] 拒绝访问。’ 的问题。
             cmd = cmd if not shell or re.search(r'\s', cmd) is None or re.search(r'\"', cmd) is not None else f'"{cmd}"'
