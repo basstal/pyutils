@@ -1,4 +1,5 @@
 - 修复： yaml.load 替换为 yaml.safe_load。
+- 新增： simplelogger 添加 hook_info、hook_warning、hook_error 以及相关测试用例。
 
 # [0.3.1] 22-12-28
 
