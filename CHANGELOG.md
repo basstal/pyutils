@@ -1,3 +1,9 @@
+# [0.3.1] 22-12-28
+
+- 修复： get_unity_path None error.
+
+# [0.3.0] 22-12-28
+
 - 修改：导出的包不再包含 test 内容。
 - 修复： execute_straight 当 shell 为 True 时，windows 使用双斜杠路径会导致执行失败，解决办法为当 shell 为 True 时，对 cmd 先做一次 normpath。
 - 新增： executor 添加 get_unity_path 函数。

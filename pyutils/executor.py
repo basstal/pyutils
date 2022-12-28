@@ -383,10 +383,12 @@ class Executor:
         Returns:
             str: 搜索结果，如果没找到则返回 None
         """
-        def valid_version(unity_exec):
+        def validation(unity_exec):
+            if unity_exec is None:
+                return False
+            result = self.execute_straight(unity_exec, ['-version'], shell=False)
             if full_version_str is None:
                 return True
-            result = self.execute_straight(unity_exec, ['-version'], shell=False)
             return result.out_str.startswith(full_version_str)
         unity_path_config_yaml = Path(os.path.join(Path.home(), 'unity_path_config.yaml'))
 
@@ -423,7 +425,7 @@ class Executor:
         # NOTE:这里如果有多个路径只取最后一个
         if unity_exec_location is not None and ';' in unity_exec_location:
             unity_exec_location = unity_exec_location.split(';')[-1]
-        if valid_version(unity_exec_location):
+        if validation(unity_exec_location):
             return unity_exec_location
 
         # 再尝试从上次保存的配置中获取
@@ -445,7 +447,7 @@ class Executor:
                 update_unity_path_config(unity_exec_location)
 
         # 都不行就返回 None
-        if unity_exec_location is None or not valid_version(unity_exec_location):
+        if not validation(unity_exec_location):
             return
         logger.info(f'find Unity executor path at {unity_exec_location}')
         return unity_exec_location
