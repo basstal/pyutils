@@ -10,9 +10,11 @@ import signal
 import pyutils.fsext as fsext
 import pyutils.simplelogger as logger
 import pyutils.shorthand as shd
+import yaml
 from typing import Union
 from deprecated import deprecated
 from threading import Thread, Event
+from pathlib import Path
 
 
 @deprecated(version='0.2.7', reason="Please use 'from pyutils.fsext import detect_encoding' instead.")
@@ -352,7 +354,7 @@ class Executor:
         git_path = os.getenv('GIT_PATH')
 
         if git_path is None:
-            logger.warning('=> Begin searching git path, it will take a long time...', False)
+            logger.info('=> Begin searching git path, it may take a long time...', False)
             # windows 先搜索默认路径
             if shd.is_win():
                 git_path = fsext.search('/Program*/Git/git-bash.exe')
@@ -366,9 +368,87 @@ class Executor:
                 git_path = fsext.search('/usr/bin/git')
 
         if git_path is None:
+            # TODO: 这里用返回 None 替代终结程序
             logger.error('=> Cannot find git install path. ??')
             exit(-2)
         return git_path
+
+    def get_unity_path(self, full_version_str=None):
+        """搜索Unity可执行文件的路径，
+        这里 unity 程序在不同平台和机器下需要做不同的处理，
+        默认是通过 hub 安装的，如果不是的话可能找不到。
+
+        Args:
+            full_version_str (str): 指定 unity 版本全称，如果不指定则随便找一个版本
+        Returns:
+            str: 搜索结果，如果没找到则返回 None
+        """
+        def valid_version(unity_exec):
+            if full_version_str is None:
+                return True
+            result = self.execute_straight(unity_exec, ['-version'], shell=False)
+            return result.out_str.startswith(full_version_str)
+        unity_path_config_yaml = Path(os.path.join(Path.home(), 'unity_path_config.yaml'))
+
+        def update_unity_path_config(unity_path):
+            result = self.execute_straight(unity_path, ['-version'], shell=False)
+            version = result.out_str.split(' ')[0]
+            if not unity_path_config_yaml.exists():
+                config_yaml = {version: unity_path}
+                with open(unity_path_config_yaml, 'w') as f:
+                    yaml.dump(config_yaml, f)
+            else:
+                with open(unity_path_config_yaml, 'r') as f:
+                    config_yaml = yaml.load(f)
+                config_yaml[version] = unity_path
+                with open(unity_path_config_yaml, 'w') as f:
+                    yaml.dump(config_yaml, f)
+
+        def load_unity_path_config():
+            """尝试读取上一次 搜索 保存的配置 以 加快速度
+            如果配置中找不到合适的 unity 路径则返回 None
+            Returns:
+                _type_: _description_
+            """
+            if not unity_path_config_yaml.exists():
+                return
+            with open(unity_path_config_yaml, 'r') as f:
+                config_yaml = yaml.load(f)
+            if full_version_str is None:
+                return config_yaml[config_yaml.keys()[0]]
+            if full_version_str in config_yaml:
+                return config_yaml[full_version_str]
+        # 先尝试直接从环境变量中获取
+        unity_exec_location = os.environ.get('UNITY_PATH')
+        # NOTE:这里如果有多个路径只取最后一个
+        if unity_exec_location is not None and ';' in unity_exec_location:
+            unity_exec_location = unity_exec_location.split(';')[-1]
+        if valid_version(unity_exec_location):
+            return unity_exec_location
+
+        # 再尝试从上次保存的配置中获取
+        unity_exec_location = load_unity_path_config()
+
+        # 再搜索本地
+        if unity_exec_location is None:
+            if shd.is_win():
+                search_pattern = f'/Program*/**/{full_version_str}/Editor/Unity.exe' if full_version_str is not None else '/Program*/**/Editor/Unity.exe'
+                unity_exec_location = fsext.search(search_pattern)
+                if unity_exec_location is None:
+                    search_pattern = f'/**/{full_version_str}/Editor/Unity.exe' if full_version_str is not None else '/**/Editor/Unity.exe'
+                    unity_exec_location = fsext.search(search_pattern)
+            else:
+                search_pattern = f'/Applications/**/Editor/{full_version_str}/Unity.app/Contents/MacOS/Unity' if full_version_str is not None else '/Applications/**/Unity.app/Contents/MacOS/Unity'
+                unity_exec_location = fsext.search(search_pattern)
+            if unity_exec_location is not None:
+                os.environ['UNITY_PATH'] = unity_exec_location
+                update_unity_path_config(unity_exec_location)
+
+        # 都不行就返回 None
+        if unity_exec_location is None or not valid_version(unity_exec_location):
+            return
+        logger.info(f'find Unity executor path at {unity_exec_location}')
+        return unity_exec_location
 
     def __ext2exe(self, ext):
         """
