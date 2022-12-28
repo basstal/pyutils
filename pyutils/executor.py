@@ -401,7 +401,7 @@ class Executor:
                     yaml.dump(config_yaml, f)
             else:
                 with open(unity_path_config_yaml, 'r') as f:
-                    config_yaml = yaml.load(f)
+                    config_yaml = yaml.safe_load(f)
                 config_yaml[version] = unity_path
                 with open(unity_path_config_yaml, 'w') as f:
                     yaml.dump(config_yaml, f)
@@ -415,7 +415,7 @@ class Executor:
             if not unity_path_config_yaml.exists():
                 return
             with open(unity_path_config_yaml, 'r') as f:
-                config_yaml = yaml.load(f)
+                config_yaml = yaml.safe_load(f)
             if full_version_str is None:
                 return config_yaml[config_yaml.keys()[0]]
             if full_version_str in config_yaml:

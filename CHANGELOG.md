@@ -1,3 +1,5 @@
+- 修复： yaml.load 替换为 yaml.safe_load。
+
 # [0.3.1] 22-12-28
 
 - 修复： get_unity_path None error.

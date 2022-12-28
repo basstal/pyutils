@@ -27,4 +27,5 @@ class TestAutoupgrade(unittest.TestCase):
         result = executor.execute_straight(executable, ['-m', "pip", "list", "-u", "--format=json"])
         result = json.loads(result.out_str)
         highest_version = autoupgrade.get_highest_version()
+        # TODO:github action 这里有可能会失败。
         self.assertTrue(len([pkg for pkg in result if pkg["name"] == "pyutils-basstal" and semantic_version.Version(pkg["version"]) == highest_version]) > 0)
