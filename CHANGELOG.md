@@ -1,3 +1,5 @@
+- 修复：simplelogger 钩子函数在外部使用时无效的问题。
+
 # [0.3.2] 22-12-29
 
 - 修复： yaml.load 替换为 yaml.safe_load。

@@ -20,56 +20,70 @@ LOG_INDENT = 0
 ErrorRaiseExcpetion = False
 
 
-def _color_message(message, color_code, bold=False):
-    if shd.is_win():
-        os.system('')
-    result = '\033[{}m{}\033[0m'.format(color_code, message)
-    if bold:
-        result = '\033[1m' + result
-    return result
+class SimpleLogger(object):
+    @staticmethod
+    def _color_message(message, color_code, bold=False):
+        if shd.is_win():
+            os.system('')
+        result = '\033[{}m{}\033[0m'.format(color_code, message)
+        if bold:
+            result = '\033[1m' + result
+        return result
 
+    @staticmethod
+    def _log(message, level=LOG_LEVEL_NORMAL, noident=False, bold=False):
+        global LOG_INDENT, LOG_LEVEL
 
-def _log(message, level=LOG_LEVEL_NORMAL, noident=False, bold=False):
-    global LOG_INDENT, LOG_LEVEL
+        if LOG_LEVEL is None:
+            LOG_LEVEL = int(os.getenv('LoggerLevel', -1))
 
-    if LOG_LEVEL is None:
-        LOG_LEVEL = int(os.getenv('LoggerLevel', -1))
+        if level >= LOG_LEVEL:
+            if level == LOG_LEVEL_INFO:
+                message = SimpleLogger._color_message(message, 0, bold)
 
-    if level >= LOG_LEVEL:
-        if level == LOG_LEVEL_INFO:
-            message = _color_message(message, 0, bold)
+            if level == LOG_LEVEL_WARNING:
+                message = SimpleLogger._color_message('warning: {}'.format(message), 33, bold)
 
-        if level == LOG_LEVEL_WARNING:
-            message = _color_message('warning: {}'.format(message), 33, bold)
+            if level == LOG_LEVEL_ERROR:
+                message = SimpleLogger._color_message('error: {}'.format(message), 31, bold)
 
-        if level == LOG_LEVEL_ERROR:
-            message = _color_message('error: {}'.format(message), 31, bold)
+            if level == LOG_LEVEL_SUCCESS:
+                message = SimpleLogger._color_message('success: {}'.format(message), 32, bold)
 
-        if level == LOG_LEVEL_SUCCESS:
-            message = _color_message('success: {}'.format(message), 32, bold)
+            if not shd.is_win():
+                message = message.replace('=>', '➜').replace('<=', '✔')
 
-        if not shd.is_win():
-            message = message.replace('=>', '➜').replace('<=', '✔')
+            message += '\n'
 
-        message += '\n'
+            pipe = sys.stdout if level != LOG_LEVEL_ERROR else sys.stderr
 
-        pipe = sys.stdout if level != LOG_LEVEL_ERROR else sys.stderr
+            pipe.write(('' if noident else ('\t' * LOG_INDENT)) + message)
 
-        pipe.write(('' if noident else ('\t' * LOG_INDENT)) + message)
+    @staticmethod
+    def info(message, bold=False):
+        SimpleLogger._log(message, LOG_LEVEL_INFO, False, bold)
+
+    @staticmethod
+    def warning(message, bold=False):
+        SimpleLogger._log(message, LOG_LEVEL_WARNING, False, bold)
+
+    @staticmethod
+    def error(message, bold=False):
+        if ErrorRaiseExcpetion:
+            raise Exception(message)
+        SimpleLogger._log(message, LOG_LEVEL_ERROR, False, bold)
 
 
 def info(message, bold=False):
-    _log(message, LOG_LEVEL_INFO, False, bold)
+    SimpleLogger.info(message, bold)
 
 
 def warning(message, bold=False):
-    _log(message, LOG_LEVEL_WARNING, False, bold)
+    SimpleLogger.warning(message, bold)
 
 
 def error(message, bold=False):
-    if ErrorRaiseExcpetion:
-        raise Exception(message)
-    _log(message, LOG_LEVEL_ERROR, False, bold)
+    SimpleLogger.error(message, bold)
 
 
 def __hook__dispatch(assertion, original_func):
@@ -83,26 +97,26 @@ def __hook__dispatch(assertion, original_func):
                 """
                 assertion(message)
                 original_func(message, *args)
-            if original_func == warning:
-                __dict__['warning'] = real_hook_func
-            elif original_func == info:
-                __dict__['info'] = real_hook_func
-            elif original_func == error:
-                __dict__['error'] = real_hook_func
+            if original_func == SimpleLogger.warning:
+                SimpleLogger.warning = real_hook_func
+            elif original_func == SimpleLogger.info:
+                SimpleLogger.info = real_hook_func
+            elif original_func == SimpleLogger.error:
+                SimpleLogger.error = real_hook_func
 
         def __exit__(self, exception_type, exception_value, traceback):
-            if original_func == warning:
-                __dict__['warning'] = original_func
-            elif original_func == info:
-                __dict__['info'] = original_func
-            elif original_func == error:
-                __dict__['error'] = original_func
+            if original_func == SimpleLogger.warning:
+                SimpleLogger.warning = original_func
+            elif original_func == SimpleLogger.info:
+                SimpleLogger.info = original_func
+            elif original_func == SimpleLogger.error:
+                SimpleLogger.error = original_func
     return Restore()
 
 
 def hook_info(assertion):
     """给 logger.info 加钩子以检测 info 信息是否符合预期"""
-    return __hook__dispatch(assertion, info)
+    return __hook__dispatch(assertion, SimpleLogger.info)
 
 
 def hook_warning(assertion):
@@ -114,7 +128,7 @@ def hook_warning(assertion):
     Returns:
         class Restore: Restore class that can be used in with statement
     """
-    return __hook__dispatch(assertion, warning)
+    return __hook__dispatch(assertion, SimpleLogger.warning)
 
 
 def hook_error(assertion):
@@ -126,15 +140,4 @@ def hook_error(assertion):
     Returns:
         class Restore: Restore class that can be used in with statement
     """
-    return __hook__dispatch(assertion, error)
-
-
-__dict__ = {
-    'info': info,
-    'warning': warning,
-    'error': error,
-    'ErrorRaiseExcpetion': ErrorRaiseExcpetion,
-    'hook_info': hook_info,
-    'hook_warning': hook_warning,
-    'hook_error': hook_error
-}
+    return __hook__dispatch(assertion, SimpleLogger.error)
