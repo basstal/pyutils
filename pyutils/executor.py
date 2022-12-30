@@ -219,8 +219,6 @@ class Executor:
         self.__change_cwd(work_dir)
 
         if self.verbose:
-            logger.LOG_INDENT
-            logger.LOG_INDENT += 1
             via = 'Shell' if shell else 'Program'
             logger.info(f'=> Exec[{via}]: {joined_args}', True)
             if work_dir is not None:
@@ -264,8 +262,6 @@ class Executor:
 
         if not ignore_error and result.code != 0:
             self.common_error_out(result)
-        if self.verbose:
-            logger.LOG_INDENT -= 1
         self.__restore_cwd()
 
         return result
@@ -534,13 +530,9 @@ class Executor:
 
     @deprecated(version='0.2.9', reason="You should always use importlib and sys.modules for python module execution.")
     def execute_module(self, module, *module_parameters):
-        logger.LOG_INDENT += 1
-
         module_name = module.__name__
         logger.info('=> Module: {}'.format(module_name), True)
         start_time = time.time()
         result = module.main(*module_parameters)
         logger.info('<= Finished: {0} {1:.2f} seconds '.format(module_name, time.time() - start_time), True)
-
-        logger.LOG_INDENT -= 1
         return result

@@ -1,3 +1,5 @@
+- 修改：replace simplelogger with python logging module；移除 LOG_INDENT 等常量值。
+
 # [0.3.3] 22-12-30
 
 - 修复：simplelogger 钩子函数在外部使用时无效的问题。

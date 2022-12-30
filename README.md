@@ -18,4 +18,3 @@ python3 setup.py install
 # TODO
 
 - [ ] more testcase.
-- [ ] remake simplelogger or replace with python logger module
