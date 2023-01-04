@@ -44,10 +44,10 @@ class SimpleLogger(object):
 
     @staticmethod
     def error(message, bold=False):
-        message = SimpleLogger._preprocess_message(message)
-        message = SimpleLogger._color_message(message, 31, bold)
         if ErrorRaiseExcpetion:
             raise Exception(message)
+        message = SimpleLogger._preprocess_message(message)
+        message = SimpleLogger._color_message(message, 31, bold)
         logger.error(message)
 
 

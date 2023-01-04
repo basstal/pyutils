@@ -1,4 +1,5 @@
-- 修改：replace simplelogger with python logging module；移除 LOG_INDENT 等常量值。
+- 修改：replace simplelogger with python logging module；
+- 移除： simplelogger.LOG_INDENT 等常量值。
 
 # [0.3.3] 22-12-30
 
