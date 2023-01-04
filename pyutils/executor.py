@@ -413,7 +413,8 @@ class Executor:
             with open(unity_path_config_yaml, 'r') as f:
                 config_yaml = yaml.safe_load(f)
             if full_version_str is None:
-                return config_yaml[config_yaml.keys()[0]]
+                for key in config_yaml.keys():
+                    return config_yaml[key]
             if full_version_str in config_yaml:
                 return config_yaml[full_version_str]
         # 先尝试直接从环境变量中获取

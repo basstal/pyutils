@@ -1,3 +1,5 @@
+- 修复： load_unity_path_config config_yaml.keys() subscriptable error.
+
 # [0.3.4] 23-01-04
 
 - 修改：replace simplelogger with python logging module；
