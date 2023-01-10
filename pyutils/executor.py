@@ -259,6 +259,7 @@ class Executor:
                 time.sleep(0)
         if self.verbose:
             logger.info(f'<= Finished: {os.path.basename(cmd)} {time.time() - start_time:.2f} seconds', True)
+            logger.info('')
 
         if not ignore_error and result.code != 0:
             self.common_error_out(result)

@@ -1,3 +1,6 @@
+# [0.3.5] 23-01-10
+
+- 修改： 在 execute_straight finish 时输出一个空行。
 - 修复： load_unity_path_config config_yaml.keys() subscriptable error.
 
 # [0.3.4] 23-01-04
