@@ -1,3 +1,5 @@
+- 移除： 在 execute_straight finish 时输出空行的逻辑。
+
 # [0.3.5] 23-01-10
 
 - 修改： 在 execute_straight finish 时输出一个空行。
