@@ -8,6 +8,10 @@ import pyutils.shorthand as sh
 
 
 class TestExecutor(unittest.TestCase):
+    def tearDown(self) -> None:
+        if os.path.exists('pyutils_linked'):
+            os.remove('pyutils_linked')
+        return super().tearDown()
 
     def test_executor_execute_file(self):
         """测试 execute_file 的基本功能"""
@@ -54,7 +58,13 @@ class TestExecutor(unittest.TestCase):
             else:
                 self.assertTrue(result.out_str.endswith(out_str))
 
-    def tearDown(self) -> None:
-        if os.path.exists('pyutils_linked'):
-            os.remove('pyutils_linked')
-        return super().tearDown()
+    def test_executor_hook(self):
+        a = {}
+
+        def test_when_exit(exit_code):
+            self.assertEqual(exit_code, -1)
+            a['a'] = 1
+        executor = Executor(True, test_when_exit)
+        self.assertFalse('a' in a)
+        executor.execute_straight('test1', '')
+        self.assertTrue('a' in a)

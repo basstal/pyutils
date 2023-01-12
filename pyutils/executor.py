@@ -59,16 +59,18 @@ class ExecuteResult:
 
 
 class Executor:
+    def __init__(self, verbose=True, exit_hook=None):
+        """_summary_
 
-    verbose = True
-    """是否输出详细执行信息
-    """
-    previous_cwd: str = None
-    """记录执行前的工作目录
-    """
-
-    def __init__(self, verbose=True):
+        Args:
+            verbose (bool, optional): 是否输出详细执行信息. Defaults to True.
+            exit_hook (_type_, optional): 记录执行前的工作目录. Defaults to None.
+        """
         self.verbose = verbose
+        self.previous_cwd: str = None
+        if not callable(exit_hook):
+            exit_hook = None
+        self.exit_hook = exit_hook
 
     def format_args(self, args):
         """统一转换命令参数
@@ -99,7 +101,10 @@ class Executor:
         logger.error(f'\nCommand failed: {result.cmd_line}\n'
                      f'code: {result.code}\n'
                      f'message: {error_message}', True)
-        sys.exit(exit_code)
+        if self.exit_hook is not None:
+            self.exit_hook(exit_code)
+        else:
+            sys.exit(exit_code)
 
     def path_to_temp_dir(self):
         """
