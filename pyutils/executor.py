@@ -64,9 +64,10 @@ class Executor:
 
         Args:
             verbose (bool, optional): 是否输出详细执行信息. Defaults to True.
-            exit_hook (_type_, optional): 记录执行前的工作目录. Defaults to None.
+            exit_hook (_type_, optional): 程序执行出错的 hook 函数. Defaults to None.
         """
         self.verbose = verbose
+        # 记录执行前的工作目录
         self.previous_cwd: str = None
         if not callable(exit_hook):
             exit_hook = None
