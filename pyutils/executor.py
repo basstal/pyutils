@@ -53,9 +53,10 @@ class ExecuteResult:
         self.error = None
         self.exception = None
         self.out_str = None
+        self.process: subprocess.Popen[bytes] = None
 
     def __str__(self) -> str:
-        return f'cmd_line : {str(self.cmd_line)}\ncode : {str(self.code)}\nout : {str(self.out_str)}\n error : {str(self.error)}'
+        return f'cmd_line : {str(self.cmd_line)}\ncode : {str(self.code)}\nout : {str(self.out_str)}\nerror : {str(self.error)}\nprocess : {str(self.process)}'
 
 
 class Executor:
@@ -119,7 +120,7 @@ class Executor:
             os.mkdir(dir)
         return dir
 
-    def execute_with_tempfile(self, cmd, args, tempfile_ext, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
+    def execute_with_tempfile(self, cmd, args, tempfile_ext, ignore_error=False, use_direct_stdout=False, custom_communicate=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
         """
         将待执行的命令（ cmd 和 args ）写入临时文件中，
         以后缀名的形式让 OS 决定用什么程序来执行。
@@ -130,7 +131,7 @@ class Executor:
             tempfile_ext (str): 临时文件的后缀名
             ignore_error (bool, optional): 是否忽略报错. Defaults to False.
             use_direct_stdout (bool, optional): 是否将输出接到 sys.stdout . Defaults to False.
-            exit_at_once (bool, optional): 是否在进程开启后直接返回. Defaults to False.
+            custom_communicate (bool, optional): 是否自己处理与进程的交互. Defaults to False.
             env (str, optional): Popen env argument. Defaults to None.
             shell (bool, optional): Popen shell argument. Defaults to True.
         """
@@ -139,13 +140,13 @@ class Executor:
         cmd_line = f'{cmd} {self.format_args(args)}'
         with open(tf[1], 'w+') as f:
             f.write(cmd_line)
-        result = self.execute_file(tf[1], None, ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
+        result = self.execute_file(tf[1], None, ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, custom_communicate=custom_communicate, env=env, shell=shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
         os.close(tf[0])
         os.unlink(tf[1])
         self.__restore_cwd()
         return result
 
-    def execute_by_git_bash(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
+    def execute_by_git_bash(self, cmd, args, ignore_error=False, use_direct_stdout=False, custom_communicate=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
         """
         通过 git-bash 程序来运行该临时文件，
         这是为了解决 windows cmd 对某些特殊字符处理错误的问题。
@@ -155,13 +156,13 @@ class Executor:
             args (list or str): 参数列表
             ignore_error (bool, optional): 是否忽略报错. Defaults to False.
             use_direct_stdout (bool, optional): 是否将输出接到 sys.stdout . Defaults to False.
-            exit_at_once (bool, optional): 是否在进程开启后直接返回. Defaults to False.
+            custom_communicate (bool, optional): 是否自己处理与进程的交互. Defaults to False.
             env (str, optional): Popen env argument. Defaults to None.
             shell (bool, optional): Popen shell argument. Defaults to True.
         """
-        return self.execute_with_tempfile(cmd, args, '.sh', ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell, work_dir=work_dir, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
+        return self.execute_with_tempfile(cmd, args, '.sh', ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, custom_communicate=custom_communicate, env=env, shell=shell, work_dir=work_dir, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
 
-    def execute_by_cmd(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
+    def execute_by_cmd(self, cmd, args, ignore_error=False, use_direct_stdout=False, custom_communicate=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False):
         """
         通过 cmd 程序来运行该临时文件。
 
@@ -170,15 +171,15 @@ class Executor:
             args (list or str): 参数列表
             ignore_error (bool, optional): 是否忽略报错. Defaults to False.
             use_direct_stdout (bool, optional): 是否将输出接到 sys.stdout . Defaults to False.
-            exit_at_once (bool, optional): 是否在进程开启后直接返回. Defaults to False.
+            custom_communicate (bool, optional): 是否自己处理与进程的交互. Defaults to False.
             env (str, optional): Popen env argument. Defaults to None.
             shell (bool, optional): Popen shell argument. Defaults to True.
         """
         if not shd.is_win():
             logger.error('You are not running on Windows!')
-        return self.execute_with_tempfile(cmd, args, '.bat', ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, exit_at_once=exit_at_once, env=env, shell=shell, work_dir=work_dir, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
+        return self.execute_with_tempfile(cmd, args, '.bat', ignore_error=ignore_error, use_direct_stdout=use_direct_stdout, custom_communicate=custom_communicate, env=env, shell=shell, work_dir=work_dir, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
 
-    def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False, before_communicate_callback=None):
+    def execute_straight(self, cmd, args, ignore_error=False, use_direct_stdout=False, custom_communicate=False, env=None, shell=True, work_dir: str = None, wrap_blank_with_double_quotes=False, before_communicate_callback=None):
         """
         启动subprocess , 直接执行命令
 
@@ -190,8 +191,8 @@ class Executor:
             忽略遇到的错误继续执行，否则会遇到错误会调用 sys.exit(-1)
         @use_direct_stdout
             是否使用 sys.stdout 作为输出
-        @exit_at_once
-            是否直接返回，否则同步等待命令结束
+        @custom_communicate
+            是否自己处理与进程的交互，否则同步等待命令结束
         @env
             Popen env argument
         @shell
@@ -235,8 +236,9 @@ class Executor:
                                    stderr=subprocess.PIPE, env=env, shell=shell)
         before_communicate_callback and before_communicate_callback(process)
         result = ExecuteResult()
+        result.process = process
         result.cmd_line = joined_args
-        if exit_at_once:
+        if custom_communicate:
             result.code = 0
         else:
             def stop_process(*args):
@@ -497,7 +499,7 @@ class Executor:
             os.chdir(self.previous_cwd)
         self.previous_cwd = None
 
-    def execute_file(self, script, args: Union[str, list] = None, work_dir: str = None, ignore_error=False, use_direct_stdout=False, exit_at_once=False, env=None, shell=True, wrap_blank_with_double_quotes=False):
+    def execute_file(self, script, args: Union[str, list] = None, work_dir: str = None, ignore_error=False, use_direct_stdout=False, custom_communicate=False, env=None, shell=True, wrap_blank_with_double_quotes=False):
         """
         执行脚本文件并传入参数
 
@@ -507,7 +509,7 @@ class Executor:
             work_dir (str, optional): 工作目录. Defaults to None.
             ignore_error (bool, optional): 是否忽略执行过程中的报错. Defaults to False.
             use_direct_stdout (bool, optional): 是否使用 sys.stdout 作为输出流. Defaults to False.
-            exit_at_once (bool, optional): 是否异步执行. Defaults to False.
+            custom_communicate (bool, optional): 是否自己处理与进程的交互. Defaults to False.
             env (dict, optional): 传入给 popen 的 env. Defaults to None.
             shell (bool, optional): 传入给 popen 的 shell. Defaults to True.
             wrap_blank_with_double_quotes (bool, optional): 将含有空白字符的内容用双引号包装
@@ -520,7 +522,7 @@ class Executor:
         exe = self.__ext2exe(split_result[1])
         if exe is None:
             result = self.execute_straight(
-                script, args, ignore_error, use_direct_stdout, exit_at_once, env, shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
+                script, args, ignore_error, use_direct_stdout, custom_communicate, env, shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
         else:
             if args is None:
                 args = [script]
@@ -530,7 +532,7 @@ class Executor:
                 # NOTE: 如果 args 是字符串形式的话不做特殊处理，直接拼接
                 args = f'{script} {args}'
             result = self.execute_straight(
-                exe, args, ignore_error, use_direct_stdout, exit_at_once, env, shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
+                exe, args, ignore_error, use_direct_stdout, custom_communicate, env, shell, wrap_blank_with_double_quotes=wrap_blank_with_double_quotes)
 
         self.__restore_cwd()
         return result
