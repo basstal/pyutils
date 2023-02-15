@@ -26,14 +26,14 @@ class AutoUpgrade(object):
     """AutoUpgrade class, holds one package
     """
 
-    def __init__(self, pkg, index=None, verbose=False):
+    def __init__(self, pkg, index=None, verbose=False, custom_get_highest_version=None):
         """Args:
                 pkg (str): name of package
                 index (str): alternative index, if not given default for *pip* will be used. Include
                              full index url, e.g. https://example.com/simple
         """
         self.pkg = pkg
-        self.pkgFormatted = pkg.replace("_", "-")
+        self.pkg_formatted = pkg.replace("_", "-")
         if index is None:
             self.index = "https://pypi.python.org/simple"
             self._index_set = False
@@ -41,6 +41,29 @@ class AutoUpgrade(object):
             self.index = index.rstrip('/')
             self._index_set = True
         self.verbose = verbose
+
+        def _get_highest_version(index, pkg, pkg_formatted):
+            # NOTE:Match for newest pypi server
+            url = "{}/{}/latest".format(index, pkg_formatted)
+            # bypass CA problem on MacOS
+            # https://stackoverflow.com/questions/2792650/import-error-no-module-name-urllib2
+            req = Request(url, headers={'X-Mashape-Key': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'})
+            gcontext = ssl.SSLContext()  # Only for gangstars
+            html = urlopen(req, context=gcontext)
+            if html.getcode() != 200:
+                raise PkgNotFoundError
+            soup = BeautifulSoup(html.read(), features="html.parser")
+            versions = []
+            for link in soup.find_all('a'):
+                text = link.get_text()
+                search_result = re.search(rf'{pkg}-(.*)\.tar\.gz', text)
+                if search_result is not None:
+                    version = search_result.group(1)
+                    versions.append(semantic_version.Version(version))
+            if len(versions) == 0:
+                raise NoVersionsError()
+            return max(versions)
+        self.get_highest_version = custom_get_highest_version if custom_get_highest_version is not None else _get_highest_version
 
     def upgrade_if_needed(self, restart=True, dependencies=False):
         """ Upgrade the package if there is a later version available.
@@ -70,7 +93,7 @@ class AutoUpgrade(object):
             pip_args.append('--proxy')
             pip_args.append(proxy)
         pip_args.append('install')
-        pip_args.append(self.pkgFormatted)
+        pip_args.append(self.pkg_formatted)
         if self._index_set:
             pip_args.append('-i')
             pip_args.append(self.index)
@@ -97,7 +120,7 @@ class AutoUpgrade(object):
             Returns true if later version exists.
         """
         current = self._get_current()
-        highest = self.get_highest_version()
+        highest = self.get_highest_version(self.index, self.pkg, self.pkg_formatted)
         if self.verbose:
             logger.info(f'highest({highest}) > current({current}) : {highest > current}')
         return highest > current
@@ -110,24 +133,3 @@ class AutoUpgrade(object):
         except pkg_resources.DistributionNotFound:
             current = EMPTY_VERSION
         return current
-
-    def get_highest_version(self):
-        url = "{}/{}/".format(self.index, self.pkgFormatted)
-        # bypass CA problem on MacOS
-        # https://stackoverflow.com/questions/2792650/import-error-no-module-name-urllib2
-        req = Request(url, headers={'X-Mashape-Key': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'})
-        gcontext = ssl.SSLContext()  # Only for gangstars
-        html = urlopen(req, context=gcontext)
-        if html.getcode() != 200:
-            raise PkgNotFoundError
-        soup = BeautifulSoup(html.read(), features="html.parser")
-        versions = []
-        for link in soup.find_all('a'):
-            text = link.get_text()
-            search_result = re.search(rf'{self.pkg}-(.*)\.tar\.gz', text)
-            if search_result is not None:
-                version = search_result.group(1)
-                versions.append(semantic_version.Version(version))
-        if len(versions) == 0:
-            raise NoVersionsError()
-        return max(versions)
