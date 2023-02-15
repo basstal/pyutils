@@ -44,7 +44,7 @@ class AutoUpgrade(object):
 
         def _get_highest_version(index, pkg, pkg_formatted):
             # NOTE:Match for newest pypi server
-            url = "{}/{}/latest".format(index, pkg_formatted)
+            url = "{}/{}".format(index, pkg_formatted)
             # bypass CA problem on MacOS
             # https://stackoverflow.com/questions/2792650/import-error-no-module-name-urllib2
             req = Request(url, headers={'X-Mashape-Key': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'})

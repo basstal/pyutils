@@ -1,4 +1,4 @@
-- 修改：支持自定义 get_highest_version，默认 get_highest_version 支持内网最新的 pypi server。
+- 修改：支持自定义 get_highest_version。
 
 # [0.3.7] 23-02-14
 
