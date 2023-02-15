@@ -116,6 +116,9 @@ class AutoUpgrade(object):
     def _get_highest_version(self):
         # NOTE:Match for newest pypi server
         url = "{}/{}".format(self.index, self.pkg_formatted)
+        return self.parse_from_html_page(url)
+
+    def parse_from_html_page(self, url):
         # bypass CA problem on MacOS
         # https://stackoverflow.com/questions/2792650/import-error-no-module-name-urllib2
         req = Request(url, headers={'X-Mashape-Key': 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'})
