@@ -1,4 +1,7 @@
-- 修改：支持自定义 get_highest_version。
+# [0.3.8] 23-02-15
+
+- 修改：纠正 execute_straight 在 custom_communicate 情况下的提示信息。
+- 修改：支持自定义 get_highest_version，提取出单独的 parse_from_html_page 过程。
 
 # [0.3.7] 23-02-14
 

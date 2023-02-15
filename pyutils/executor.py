@@ -240,6 +240,8 @@ class Executor:
         result.cmd_line = joined_args
         if custom_communicate:
             result.code = 0
+            if self.verbose:
+                logger.info('<= Async Processing...', True)
         else:
             def stop_process(*args):
                 logger.error(f'The shell process[{process.pid}] have been killed!')
@@ -265,8 +267,8 @@ class Executor:
             thread.start()
             while not event.is_set():
                 time.sleep(0)
-        if self.verbose:
-            logger.info(f'<= Finished: {os.path.basename(cmd)} {time.time() - start_time:.2f} seconds', True)
+            if self.verbose:
+                logger.info(f'<= Finished: {os.path.basename(cmd)} {time.time() - start_time:.2f} seconds', True)
 
         if not ignore_error and result.code != 0:
             self.common_error_out(result)
