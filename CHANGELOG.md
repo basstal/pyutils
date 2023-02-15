@@ -1,3 +1,5 @@
+- 修改： autoupgrade 指定 upgrade version，并加入 force_reinstall 参数。
+
 # [0.3.8] 23-02-15
 
 - 修改：纠正 execute_straight 在 custom_communicate 情况下的提示信息。

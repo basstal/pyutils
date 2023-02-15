@@ -44,23 +44,25 @@ class AutoUpgrade(object):
 
         self.get_highest_version = custom_get_highest_version if custom_get_highest_version is not None else self._get_highest_version
 
-    def upgrade_if_needed(self, restart=True, dependencies=False):
+    def upgrade_if_needed(self, restart=True, dependencies=False, force_reinstall=False):
         """ Upgrade the package if there is a later version available.
             Args:
                 restart, restart app if True
                 dependencies, update dependencies if True (see pip --no-deps)
         """
-        if self.check_if_later_version_exist():
+        current = self._get_current()
+        highest = self.get_highest_version()
+        if highest > current:
             if self.verbose:
                 logger.info(f"Upgrading {self.pkg}")
-            self.upgrade(dependencies)
+            self._upgrade(highest, dependencies, force_reinstall)
             if restart:
                 self.restart()
             # NOTE:if restart is True, return will never execute.
             return True
         return False
 
-    def upgrade(self, dependencies=False):
+    def _upgrade(self, target_version, dependencies=False, force_reinstall=False):
         """ Upgrade the package unconditionaly
             Args:
                 dependencies: update dependencies if True (see pip --no-deps)
@@ -73,6 +75,8 @@ class AutoUpgrade(object):
             pip_args.append(proxy)
         pip_args.append('install')
         pip_args.append(self.pkg_formatted)
+        if target_version is not None:
+            pip_args[-1] = f'{self.pkg_formatted}=={str(target_version)}'
         if self._index_set:
             pip_args.append('-i')
             pip_args.append(self.index)
@@ -80,6 +84,8 @@ class AutoUpgrade(object):
             pip_args.append("--no-deps")
         if self._get_current() != EMPTY_VERSION:
             pip_args.append("--upgrade")
+        if force_reinstall:
+            pip_args.append("--force-reinstall")
         executor = Executor(self.verbose)
         logger.info(f'AutoUpgrade {self.pkg} with pip arguments : {pip_args}')
         executor.execute_straight(executable, pip_args, wrap_blank_with_double_quotes=True)
