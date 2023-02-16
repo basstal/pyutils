@@ -1,3 +1,5 @@
+# [0.3.9] 23-02-16
+
 - 修改： autoupgrade 指定 upgrade version，并加入 force_reinstall 参数。
 
 # [0.3.8] 23-02-15
