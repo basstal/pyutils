@@ -188,6 +188,7 @@ def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_link
     """
     NOTE:这里的 patterns 用的是 UNIX 通配符，而非语言正则表达式
     TODO: replace with glob.glob
+    TODO: consider remove apply_ignore_when_conflict parameter.
     Args:
         ignore_patterns (list[str], optional): 文件忽略规则. Defaults to True.
 
