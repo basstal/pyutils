@@ -124,6 +124,25 @@ class AutoUpgrade(object):
         url = "{}/{}".format(self.index, self.pkg_formatted)
         return self.parse_from_html_page(url)
 
+    def search_tar_version(self, text):
+        search_result = re.search(rf'{self.pkg}-(.*)(\.tar\.gz)', text)
+        if search_result is not None:
+            version = search_result.group(1)
+            return semantic_version.Version(version)
+        return None
+
+    def search_wheel_version(self, text):
+        # wheel_name 示例: some_package-0.1.2-cp37-cp37m-manylinux1_x86_64.whl
+
+        # 正则表达式匹配 wheel 包的名称和版本
+        pattern = rf'({self.pkg})-(?P<version>[0-9]+\.[0-9]+\.[0-9]+)(-[\w\.]+)?(-.*\.whl)'
+        match = re.match(pattern, text)
+
+        if match:
+            package_version = match.group('version')
+            return semantic_version.Version(package_version)
+        return None
+
     def parse_from_html_page(self, url):
         # bypass CA problem on MacOS
         # https://stackoverflow.com/questions/2792650/import-error-no-module-name-urllib2
@@ -136,10 +155,12 @@ class AutoUpgrade(object):
         versions = []
         for link in soup.find_all('a'):
             text = link.get_text()
-            search_result = re.search(rf'{self.pkg}-(.*)\.tar\.gz', text)
-            if search_result is not None:
-                version = search_result.group(1)
-                versions.append(semantic_version.Version(version))
+            tar_version = self.search_tar_version(text)
+            if tar_version is not None:
+                versions.append(tar_version)
+            wheel_version = self.search_wheel_version(text)
+            if wheel_version is not None:
+                versions.append(wheel_version)
         if len(versions) == 0:
             raise NoVersionsError()
         return max(versions)
