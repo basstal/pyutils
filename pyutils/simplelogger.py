@@ -1,3 +1,5 @@
+# ruff: noqa: E501
+
 import os
 import logging
 import pyutils.shorthand as shd

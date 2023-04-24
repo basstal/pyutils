@@ -1,3 +1,5 @@
+# ruff: noqa: E501
+
 import sys
 from urllib.request import urlopen, Request
 import ssl

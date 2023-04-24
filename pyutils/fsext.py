@@ -1,3 +1,5 @@
+# ruff: noqa: E501
+
 import codecs
 import ctypes
 import filecmp
@@ -7,6 +9,7 @@ import os
 import shutil
 import base64
 import charade
+from deprecated import deprecated
 
 import pyutils.shorthand as shd
 import pyutils.simplelogger as logger
@@ -184,6 +187,7 @@ def get_dirs(work_dir, recursive=False, ignore_patterns=None):
     return result
 
 
+@deprecated(version='0.3.9', reason="Please use 'get_files_glob' instead.")
 def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_links=False, recursive=True, apply_ignore_when_conflict=True):
     """
     NOTE:这里的 patterns 用的是 UNIX 通配符，而非语言正则表达式
@@ -227,6 +231,36 @@ def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_link
                     if valid:
                         result.append(full_path)
     return sorted(result)
+
+
+def get_files_glob(work_dir, include_patterns=None, ignore_patterns=None, recursive=True):
+    """
+    Args:
+        work_dir (str): 要检索的工作目录
+        include_patterns (list[str], optional): 包含的文件规则
+        ignore_patterns (list[str], optional): 忽略的文件规则
+        recursive (bool, optional): 是否递归搜索子目录，默认为True
+    """
+    if os.path.isfile(work_dir):
+        result = [work_dir]
+    else:
+        result = []
+        patterns = include_patterns or ['*']
+
+        for pattern in patterns:
+            if recursive:
+                glob_pattern = os.path.join(work_dir, '**', pattern)
+                matched_files = glob.glob(glob_pattern, recursive=True)
+            else:
+                glob_pattern = os.path.join(work_dir, pattern)
+                matched_files = glob.glob(glob_pattern)
+
+            if ignore_patterns is not None:
+                for ignore_pattern in ignore_patterns:
+                    matched_files = [file for file in matched_files if not fnmatch.fnmatch(file, ignore_pattern)]
+            result.extend(matched_files)
+
+    return sorted(set(result))
 
 
 def to_base64(src, tar=None):

@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 import shutil
 import time
 import unittest
@@ -135,3 +136,12 @@ class TestFsext(unittest.TestCase):
         files = fs.get_dirs(src_path, True)
         sync_result = fs.sync_folder(src_path, target_path, files, remove_diff=True)
         self.assertTrue(sync_result)
+
+    def test_get_files_glob(self):
+        work_dir = '.'
+        include_patterns = ['*.txt', '*.md']
+        ignore_patterns = ['*_ignore.txt']
+        result = fs.get_files_glob(work_dir, include_patterns, ignore_patterns, recursive=True)
+        self.assertTrue(len(result) == 4)
+        result = fs.get_files_glob(work_dir, include_patterns, ignore_patterns, recursive=False)
+        self.assertTrue(len(result) == 3)
