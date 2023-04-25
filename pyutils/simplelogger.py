@@ -3,6 +3,7 @@
 import os
 import logging
 import pyutils.shorthand as shd
+import sys
 
 ######################
 ######################
@@ -13,10 +14,24 @@ import pyutils.shorthand as shd
 ErrorRaiseExcpetion = False
 
 logging.basicConfig(level=logging.INFO, datefmt='%y-%m-%d %H:%M:%S', format='%(message)s')
-logger = logging.getLogger()
 
 
 class SimpleLogger(object):
+    # 这是原来的 error/warning logger
+    _logger = logging.getLogger("error_logger")
+    _logger.setLevel(logging.ERROR)
+    _logger.handlers.clear()
+    _logger.addHandler(logging.StreamHandler(sys.stderr))
+    _logger.propagate = False
+    # 创建 info logger
+    _info_logger = logging.getLogger("info_logger")
+    _info_logger.setLevel(logging.INFO)
+    _info_logger.handlers.clear()
+    _info_logger.addHandler(logging.StreamHandler(sys.stdout))
+    _info_logger.propagate = False
+
+    __hanlder_cache = {}
+
     @staticmethod
     def _color_message(message, color_code, bold=False):
         if shd.is_win():
@@ -25,7 +40,7 @@ class SimpleLogger(object):
         return f'{bold_code}\033[{color_code}m{message}\033[0m'
 
     @staticmethod
-    def _preprocess_message(message):
+    def _preprocess_message(message: str):
         if not shd.is_win():
             message = message.replace('=>', '➜').replace('<=', '✔')
 
@@ -36,13 +51,13 @@ class SimpleLogger(object):
     @staticmethod
     def info(message, _):
         message = SimpleLogger._preprocess_message(message)
-        logger.info(message)
+        SimpleLogger._info_logger.info(message)
 
     @staticmethod
     def warning(message, bold=False):
         message = SimpleLogger._preprocess_message(message)
         message = SimpleLogger._color_message(message, 33, bold)
-        logger.warning(message)
+        SimpleLogger._logger.warning(message)
 
     @staticmethod
     def error(message, bold=False):
@@ -50,7 +65,26 @@ class SimpleLogger(object):
             raise Exception(message)
         message = SimpleLogger._preprocess_message(message)
         message = SimpleLogger._color_message(message, 31, bold)
-        logger.error(message)
+        SimpleLogger._logger.error(message)
+
+    @staticmethod
+    def addFileHandler(file_path):
+        if file_path in SimpleLogger.__hanlder_cache:
+            return
+        file_handler = logging.FileHandler(file_path)
+        SimpleLogger.__hanlder_cache[file_path] = file_handler
+        SimpleLogger._logger.addHandler(file_handler)
+        SimpleLogger._info_logger.addHandler(file_handler)
+
+    @staticmethod
+    def removeFileHander(file_path):
+        if file_path in SimpleLogger.__hanlder_cache:
+            return
+        file_handler = SimpleLogger.__hanlder_cache[file_path]
+        SimpleLogger._logger.removeHandler(file_handler)
+        SimpleLogger._info_logger.removeHandler(file_handler)
+        file_handler.close()
+        del SimpleLogger.__hanlder_cache[file_path]
 
 
 def info(message, bold=False):

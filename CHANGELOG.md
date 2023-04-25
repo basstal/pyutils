@@ -1,3 +1,6 @@
+# [0.4.0] 23-04-25
+
+- 修复： simplelogger 区分 info 的 logger 输出渠道，不再使 info 的信息输出到 stderr 的流中。
 - 新增： fsext.py 加入 get_files_glob 函数，以替代原来的 get_files 函数。
 
 # [0.3.9] 23-02-16
