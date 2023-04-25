@@ -86,6 +86,7 @@ class SimpleLogger(object):
         file_handler.close()
         del SimpleLogger.__hanlder_cache[file_path]
 
+logger = SimpleLogger._logger
 
 def info(message, bold=False):
     SimpleLogger.info(message, bold)
