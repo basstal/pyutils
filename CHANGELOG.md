@@ -1,3 +1,7 @@
+# [0.4.1] 23-04-26
+
+- 修改：兼容以前的 logger 。
+
 # [0.4.0] 23-04-25
 
 - 修复： simplelogger 区分 info 的 logger 输出渠道，不再使 info 的信息输出到 stderr 的流中。
