@@ -140,7 +140,7 @@ class TestFsext(unittest.TestCase):
     def test_get_files_glob(self):
         work_dir = '.'
         include_patterns = ['*.txt', '*.md']
-        ignore_patterns = ['*_ignore.txt']
+        ignore_patterns = ['*_ignore.txt', '*pyutils_basstal.egg-info*']
         result = fs.get_files_glob(work_dir, include_patterns, ignore_patterns, recursive=True)
         self.assertTrue(len(result) == 4)
         result = fs.get_files_glob(work_dir, include_patterns, ignore_patterns, recursive=False)

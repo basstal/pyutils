@@ -57,7 +57,7 @@ class SimpleLogger(object):
     def warning(message, bold=False):
         message = SimpleLogger._preprocess_message(message)
         message = SimpleLogger._color_message(message, 33, bold)
-        SimpleLogger._logger.warning(message)
+        SimpleLogger._info_logger.warning(message)
 
     @staticmethod
     def error(message, bold=False):
@@ -86,7 +86,9 @@ class SimpleLogger(object):
         file_handler.close()
         del SimpleLogger.__hanlder_cache[file_path]
 
+
 logger = SimpleLogger._logger
+
 
 def info(message, bold=False):
     SimpleLogger.info(message, bold)
@@ -111,6 +113,7 @@ def __hook__dispatch(assertion, original_func):
                 """
                 assertion(message)
                 original_func(message, *args)
+            self.hook_func = real_hook_func
             if original_func == SimpleLogger.warning:
                 SimpleLogger.warning = real_hook_func
             elif original_func == SimpleLogger.info:
@@ -119,11 +122,11 @@ def __hook__dispatch(assertion, original_func):
                 SimpleLogger.error = real_hook_func
 
         def __exit__(self, exception_type, exception_value, traceback):
-            if original_func == SimpleLogger.warning:
+            if self.hook_func == SimpleLogger.warning:
                 SimpleLogger.warning = original_func
-            elif original_func == SimpleLogger.info:
+            elif self.hook_func == SimpleLogger.info:
                 SimpleLogger.info = original_func
-            elif original_func == SimpleLogger.error:
+            elif self.hook_func == SimpleLogger.error:
                 SimpleLogger.error = original_func
     return Restore()
 

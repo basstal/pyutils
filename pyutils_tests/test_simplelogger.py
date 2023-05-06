@@ -1,5 +1,6 @@
 import unittest
 import pyutils.simplelogger as logger
+import os
 
 
 class TestSimplelogger(unittest.TestCase):
@@ -41,3 +42,24 @@ class TestSimplelogger(unittest.TestCase):
             self.assertEqual(str(e.exception), log)
         finally:
             logger.ErrorRaiseExcpetion = False
+
+    def test_logfile(self):
+        """测试 addFileHandler 功能
+        """
+        from pyutils.simplelogger import SimpleLogger
+        import tempfile
+        tf = tempfile.mkstemp()
+        os.close(tf[0])
+        try:
+            SimpleLogger.addFileHandler(tf[1])
+            logger.error("Test hook error")
+            logger.warning("Test hook warning")
+            logger.info("Test hook log")
+        finally:
+            SimpleLogger.removeFileHander(tf[1])
+
+        with open(tf[1], 'r') as f:
+            content = [line.strip() for line in f.readlines()]
+        self.assertIn("\x1b[31mTest hook error\x1b[0m", content)
+        self.assertIn("\x1b[33mTest hook warning\x1b[0m", content)
+        self.assertIn("Test hook log", content)
