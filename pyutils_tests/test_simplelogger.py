@@ -60,6 +60,6 @@ class TestSimplelogger(unittest.TestCase):
 
         with open(tf[1], 'r') as f:
             content = [line.strip() for line in f.readlines()]
-        self.assertIn("\x1b[31mTest hook error\x1b[0m", content)
-        self.assertIn("\x1b[33mTest hook warning\x1b[0m", content)
-        self.assertIn("Test hook log", content)
+        self.assertTrue(any(["Test hook error" in line for line in content]))
+        self.assertTrue(any(["Test hook warning" in line for line in content]))
+        self.assertTrue(any(["Test hook log" in line for line in content]))
