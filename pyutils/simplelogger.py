@@ -4,6 +4,8 @@ import os
 import logging
 import pyutils.shorthand as shd
 import sys
+import re
+from colorama import Fore, Style
 
 ######################
 ######################
@@ -34,23 +36,36 @@ class SimpleLogger(object):
 
     @staticmethod
     def _color_message(message, color_code, bold=False):
-        if shd.is_win():
-            os.system('')
-        bold_code = '\033[1m' if bold else ''
-        return f'{bold_code}\033[{color_code}m{message}\033[0m'
+        os.system('')
+        # Map color_code to actual color
+        color_map = {
+            '31': Fore.RED,
+            '32': Fore.GREEN,
+            '33': Fore.YELLOW,
+            '34': Fore.BLUE,
+            '35': Fore.MAGENTA,
+            '36': Fore.CYAN,
+            '37': Fore.WHITE
+        }
+        color = color_map.get(str(color_code), Fore.RESET)
+
+        if bold:
+            return f'{Style.BRIGHT}{color}{message}{Style.RESET_ALL}'
+        else:
+            return f'{color}{message}{Style.RESET_ALL}'
 
     @staticmethod
     def _preprocess_message(message: str):
         if not shd.is_win():
             message = message.replace('=>', '➜').replace('<=', '✔')
 
-        if message.endswith('\r\n') or message.endswith('\n'):
-            message = message.rstrip()
-        return message
+        return message.rstrip('\r\n')
 
     @staticmethod
-    def info(message, _):
+    def info(message, bold=False, color_code=None):
         message = SimpleLogger._preprocess_message(message)
+        if color_code is not None or bold is not False:
+            message = SimpleLogger._color_message(message, color_code, bold)
         SimpleLogger._info_logger.info(message)
 
     @staticmethod
@@ -72,12 +87,25 @@ class SimpleLogger(object):
         if file_path in SimpleLogger.__hanlder_cache:
             return
         file_handler = logging.FileHandler(file_path)
+
+        class NoEscapeSeqFormatter(logging.Formatter):
+            _ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
+
+            def format(self, record):
+                record.msg = self._ansi_escape.sub('', record.getMessage())
+                return super().format(record)
+
+        file_handler.setFormatter(NoEscapeSeqFormatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S'))
         SimpleLogger.__hanlder_cache[file_path] = file_handler
         SimpleLogger._logger.addHandler(file_handler)
         SimpleLogger._info_logger.addHandler(file_handler)
 
     @staticmethod
     def removeFileHander(file_path):
+        SimpleLogger.removeFileHandler(file_path)
+
+    @staticmethod
+    def removeFileHandler(file_path):
         if file_path in SimpleLogger.__hanlder_cache:
             return
         file_handler = SimpleLogger.__hanlder_cache[file_path]
@@ -90,8 +118,8 @@ class SimpleLogger(object):
 logger = SimpleLogger._logger
 
 
-def info(message, bold=False):
-    SimpleLogger.info(message, bold)
+def info(message, bold=False, color_code=None):
+    SimpleLogger.info(message, bold, color_code)
 
 
 def warning(message, bold=False):
