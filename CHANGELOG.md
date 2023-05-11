@@ -1,3 +1,8 @@
+# [0.4.4] 23-05-11
+
+- 修复： jenkins 上无法识别 Fore.RESET 的问题。
+- 修改： logging.FileHandler 编码指定为 utf-8 。
+
 # [0.4.3] 23-05-10
 
 - 修改： simplelogger.info 支持文本颜色，FileHandler 会移除 ANSI 转义字符，并添加统一的格式。

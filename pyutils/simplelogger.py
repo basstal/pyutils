@@ -15,7 +15,10 @@ from colorama import Fore, Style
 
 ErrorRaiseExcpetion = False
 
-logging.basicConfig(level=logging.INFO, datefmt='%y-%m-%d %H:%M:%S', format='%(message)s')
+if sys.version_info >= (3, 9):
+    logging.basicConfig(level=logging.INFO, datefmt='%y-%m-%d %H:%M:%S', format='%(message)s', encoding='utf-8')
+else:
+    logging.basicConfig(level=logging.INFO, datefmt='%y-%m-%d %H:%M:%S', format='%(message)s')
 
 
 class SimpleLogger(object):
@@ -47,7 +50,8 @@ class SimpleLogger(object):
             '36': Fore.CYAN,
             '37': Fore.WHITE
         }
-        color = color_map.get(str(color_code), Fore.RESET)
+        # jenkins 无法识别 Fore.RESET，这里将 Fore.RESET 替换为 ''
+        color = color_map.get(str(color_code), '')
 
         if bold:
             return f'{Style.BRIGHT}{color}{message}{Style.RESET_ALL}'
@@ -86,7 +90,7 @@ class SimpleLogger(object):
     def addFileHandler(file_path):
         if file_path in SimpleLogger.__hanlder_cache:
             return
-        file_handler = logging.FileHandler(file_path)
+        file_handler = logging.FileHandler(file_path, encoding='utf-8')
 
         class NoEscapeSeqFormatter(logging.Formatter):
             _ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
