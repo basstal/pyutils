@@ -123,15 +123,15 @@ logger = SimpleLogger._logger
 
 
 def info(message, bold=False, color_code=None):
-    SimpleLogger.info(message, bold, color_code)
+    SimpleLogger.info(str(message), bold, color_code)
 
 
 def warning(message, bold=False):
-    SimpleLogger.warning(message, bold)
+    SimpleLogger.warning(str(message), bold)
 
 
 def error(message, bold=False):
-    SimpleLogger.error(message, bold)
+    SimpleLogger.error(str(message), bold)
 
 
 def __hook__dispatch(assertion, original_func):
