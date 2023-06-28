@@ -9,6 +9,7 @@ import os
 import shutil
 import base64
 import charade
+import sys
 from deprecated import deprecated
 
 import pyutils.shorthand as shd
@@ -98,7 +99,7 @@ def search(pattern: str, validator=None, params={}):
         return glob_wrap(pattern)
 
 
-def copy_files(target_path, src_file_list, logs=False, dirs_exist_ok=True):
+def copy_files(target_path, src_file_list, logs=False, dirs_exist_ok=False):
     """复制并覆盖目标路径下所有同名内容，如果 src_file 是文件夹，使用 shutil.copytree 复制，否则使用 shutil.copy2
 
     Args:
@@ -126,7 +127,12 @@ def copy_files(target_path, src_file_list, logs=False, dirs_exist_ok=True):
                     shutil.rmtree(deploy_file_path)
                     if logs:
                         logger.info('Removed => {}'.format(deploy_file_path))
-                shutil.copytree(src_file, deploy_file_path, dirs_exist_ok=dirs_exist_ok)
+                if sys.version_info >= (3, 8):
+                    shutil.copytree(src_file, deploy_file_path, dirs_exist_ok=dirs_exist_ok)
+                else:
+                    if dirs_exist_ok is True:
+                        logger.warning('dirs_exist_ok is not supported in python version < 3.8')
+                    shutil.copytree(src_file, deploy_file_path)
             if logs:
                 logger.info('Copy file from {} to => {}'.format(src_file, deploy_file_path))
 
