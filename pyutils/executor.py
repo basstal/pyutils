@@ -85,9 +85,9 @@ class Executor:
         Returns:
             str: _description_
         """
-        if type(args) is list:
+        if isinstance(args, list):
             return ' '.join(args)
-        elif type(args) is str:
+        elif isinstance(args, str):
             return args
         elif args is not None:
             logger.error(f'Unsupported args type : {type(args)}')
@@ -102,11 +102,14 @@ class Executor:
             exit_code (number, optional): sys.exit() 参数. Defaults to -1
         """
         error_message = f'{result.error}\n{result.out_str}' if result.error != '' else result.out_str
-        logger.error(f'\nCommand failed: {result.cmd_line}\n'
-                     f'code: {result.code}\n'
-                     f'message: {error_message}', True)
+        concatenation_message = f'\nCommand failed: {result.cmd_line}\ncode: {result.code}\nmessage: {error_message}'
+        logger.error(concatenation_message, True)
         if self.exit_hook is not None:
-            self.exit_hook(exit_code)
+            # 如果 self.exit_hook 是一个参数的 callable 对象
+            if len(self.exit_hook.__code__.co_varnames) == 1:
+                self.exit_hook(exit_code)
+            else:
+                self.exit_hook(exit_code, concatenation_message)
         else:
             sys.exit(exit_code)
 

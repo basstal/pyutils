@@ -61,11 +61,18 @@ class TestExecutor(unittest.TestCase):
 
     def test_executor_hook(self):
         a = {}
-
-        def test_when_exit(exit_code):
+        def test_when_exit(exit_code, message):
             self.assertEqual(exit_code, -1)
             a['a'] = 1
+            self.assertIn('Command failed: test1', message)
         executor = Executor(True, test_when_exit)
         self.assertFalse('a' in a)
         executor.execute_straight('test1', '')
         self.assertTrue('a' in a)
+        def test_when_exit_compatible(exit_code):
+            self.assertEqual(exit_code, -1)
+            a['a'] = 2
+        executor = Executor(True, test_when_exit_compatible)
+        self.assertNotEqual(a['a'], 2)
+        executor.execute_straight('test1', '')
+        self.assertEqual(a['a'], 2)
