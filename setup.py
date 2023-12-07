@@ -133,8 +133,7 @@ setup(
         "beautifulsoup4",
         "deprecated",
         "pyyaml",
-        "colorama",
-        "setuptools"
+        "colorama"
     ],  # Optional
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
