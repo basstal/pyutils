@@ -106,7 +106,7 @@ class Executor:
         logger.error(concatenation_message, True)
         if self.exit_hook is not None:
             # 如果 self.exit_hook 是一个参数的 callable 对象
-            if len(self.exit_hook.__code__.co_varnames) == 1:
+            if self.exit_hook.__code__.co_argcount == 1:
                 self.exit_hook(exit_code)
             else:
                 self.exit_hook(exit_code, concatenation_message)
