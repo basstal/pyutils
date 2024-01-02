@@ -110,7 +110,7 @@ class SimpleLogger(object):
 
     @staticmethod
     def removeFileHandler(file_path):
-        if file_path in SimpleLogger.__hanlder_cache:
+        if file_path not in SimpleLogger.__hanlder_cache:
             return
         file_handler = SimpleLogger.__hanlder_cache[file_path]
         SimpleLogger._logger.removeHandler(file_handler)

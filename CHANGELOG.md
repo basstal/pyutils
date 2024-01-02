@@ -1,3 +1,9 @@
+# [0.4.7] 24-01-02
+
+- 修复： simplelogger.py removeFileHandler 逻辑错误的问题。
+- 修复： TypeError: cook_exit_hook() takes 1 positional argument but 2 were given 报错。
+- 修改：支持 python 3.12 。
+
 # [0.4.5] 23-12-07
 
 - 修改： executor.py exit_hook 支持第二个参数，会传入构造的错误信息。
