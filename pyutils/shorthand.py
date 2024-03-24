@@ -8,11 +8,11 @@ import sys
 
 
 def is_win():
-    return sys.platform.lower().startswith('win')
+    return sys.platform.lower().startswith("win")
 
 
 def is_macOS():
-    return sys.platform.lower().startswith('darwin')
+    return sys.platform.lower().startswith("darwin")
 
 
 def is_admin_win():
@@ -24,6 +24,7 @@ def is_admin_win():
     if is_win():
         import ctypes
         import os
+
         try:
             return os.getuid() == 0
         except AttributeError:

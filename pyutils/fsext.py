@@ -38,10 +38,10 @@ def detect_encoding(input):
     # in case of error
     # encode with 'utf -8' encoding
     except UnicodeDecodeError:
-        return charade.detect(input.encode('utf-8'))
+        return charade.detect(input.encode("utf-8"))
 
 
-def convert_encoding(file_path, target_encoding='utf-8'):
+def convert_encoding(file_path, target_encoding="utf-8"):
     """converting the target file encoding.
 
     Args:
@@ -52,19 +52,22 @@ def convert_encoding(file_path, target_encoding='utf-8'):
         print(f"{file_path} isn't a valid path to specific file.")
         return
     try:
-        with open(file_path, 'rb') as f_in:
+        with open(file_path, "rb") as f_in:
             raw_content = f_in.read()
         detect_result = detect_encoding(raw_content)
-        if detect_result['confidence'] < 0.9:
-            logger.warning("detect_result confidence less than 0.9,"
-                           f"You should confirm than transform encoding of the file {file_path} manually.")
+        if detect_result["confidence"] < 0.9:
+            logger.warning(
+                "detect_result confidence less than 0.9,"
+                f"You should confirm than transform encoding of the file {file_path} manually."
+            )
             return
-        if detect_result['encoding'] != target_encoding:
-            logger.info(f'{file_path} processed with detect_result {detect_result}.')
-            with codecs.open(file_path, 'r',
-                             encoding=detect_result['encoding']) as f_in:
+        if detect_result["encoding"] != target_encoding:
+            logger.info(f"{file_path} processed with detect_result {detect_result}.")
+            with codecs.open(
+                file_path, "r", encoding=detect_result["encoding"]
+            ) as f_in:
                 content = f_in.read()
-            with codecs.open(file_path, 'w', encoding=target_encoding) as f_out:
+            with codecs.open(file_path, "w", encoding=target_encoding) as f_out:
                 f_out.write(content)
     except IOError as err:
         logger.error(f"I/O error: {err}")
@@ -81,13 +84,15 @@ def search(pattern: str, validator=None, params={}):
     Returns:
         str | None: 搜索到的路径，未搜索到则返回 None
     """
+
     def glob_wrap(path):
-        logger.info('=> Searching at {}'.format(path), False)
+        logger.info("=> Searching at {}".format(path), False)
         result = glob.glob(path, recursive=True)
         if len(result) > 0:
             for find_path in result:
                 if validator is None or validator(find_path, **params):
                     return find_path
+
     if shd.is_win():
         volumes = get_all_volumes_win()
         for volume in volumes:
@@ -115,48 +120,55 @@ def copy_files(target_path, src_file_list, logs=False, dirs_exist_ok=False):
             if not os.path.exists(deploy_dir):
                 os.makedirs(deploy_dir)
                 if logs:
-                    logger.info('Makedirs => {}'.format(deploy_dir))
+                    logger.info("Makedirs => {}".format(deploy_dir))
             if os.path.isfile(deploy_file_path):
                 os.remove(deploy_file_path)
                 if logs:
-                    logger.info('Removed => {}'.format(deploy_file_path))
+                    logger.info("Removed => {}".format(deploy_file_path))
             if os.path.isfile(src_file):
                 shutil.copy2(src_file, deploy_file_path)
             else:
                 if os.path.exists(deploy_file_path):
                     shutil.rmtree(deploy_file_path)
                     if logs:
-                        logger.info('Removed => {}'.format(deploy_file_path))
+                        logger.info("Removed => {}".format(deploy_file_path))
                 if sys.version_info >= (3, 8):
-                    shutil.copytree(src_file, deploy_file_path, dirs_exist_ok=dirs_exist_ok)
+                    shutil.copytree(
+                        src_file, deploy_file_path, dirs_exist_ok=dirs_exist_ok
+                    )
                 else:
                     if dirs_exist_ok is True:
-                        logger.warning('dirs_exist_ok is not supported in python version < 3.8')
+                        logger.warning(
+                            "dirs_exist_ok is not supported in python version < 3.8"
+                        )
                     shutil.copytree(src_file, deploy_file_path)
             if logs:
-                logger.info('Copy file from {} to => {}'.format(src_file, deploy_file_path))
+                logger.info(
+                    "Copy file from {} to => {}".format(src_file, deploy_file_path)
+                )
 
 
-def read_file(file, decode='utf-8'):
+def read_file(file, decode="utf-8"):
     if os.path.isfile(file):
-        content = ''
-        with open(file, 'rb') as fo:
+        content = ""
+        with open(file, "rb") as fo:
             content = fo.read()
         content = content.decode(decode)
         return content
     else:
-        logger.error('{} is not found or is not a file'.format(file))
+        logger.error("{} is not found or is not a file".format(file))
 
 
 def get_all_volumes_win():
     if shd.is_win():
         lp_buffer = ctypes.create_string_buffer(78)
         ctypes.windll.kernel32.GetLogicalDriveStringsA(
-            ctypes.sizeof(lp_buffer), lp_buffer)
-        all_volumes = lp_buffer.raw.split(b'\x00')
+            ctypes.sizeof(lp_buffer), lp_buffer
+        )
+        all_volumes = lp_buffer.raw.split(b"\x00")
         legal_volumes = []
         for vol in all_volumes:
-            s = str(vol, encoding='utf-8')
+            s = str(vol, encoding="utf-8")
             if os.path.isdir(s):
                 legal_volumes.append(s)
         return legal_volumes
@@ -173,6 +185,7 @@ def get_dirs(work_dir, recursive=False, ignore_patterns=None):
     Returns:
         list[str]: 文件夹列表
     """
+
     def match_ignore_pattern(dir):
         if ignore_patterns is not None:
             valid = True
@@ -182,9 +195,14 @@ def get_dirs(work_dir, recursive=False, ignore_patterns=None):
                 if not valid:
                     return True
         return False
+
     result = []
     if os.path.isdir(work_dir):
-        list_dirs = [os.path.join(work_dir, name) for name in os.listdir(work_dir) if os.path.isdir(os.path.join(work_dir, name))]
+        list_dirs = [
+            os.path.join(work_dir, name)
+            for name in os.listdir(work_dir)
+            if os.path.isdir(os.path.join(work_dir, name))
+        ]
         list_dirs = [dir for dir in list_dirs if not match_ignore_pattern(dir)]
         result.extend(list_dirs)
         if recursive:
@@ -193,8 +211,15 @@ def get_dirs(work_dir, recursive=False, ignore_patterns=None):
     return result
 
 
-@deprecated(version='0.3.9', reason="Please use 'get_files_glob' instead.")
-def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_links=False, recursive=True, apply_ignore_when_conflict=True):
+@deprecated(version="0.3.9", reason="Please use 'get_files_glob' instead.")
+def get_files(
+    work_dir,
+    include_patterns=None,
+    ignore_patterns=None,
+    follow_links=False,
+    recursive=True,
+    apply_ignore_when_conflict=True,
+):
     """
     NOTE:这里的 patterns 用的是 UNIX 通配符，而非语言正则表达式
     TODO: replace with glob.glob
@@ -239,31 +264,46 @@ def get_files(work_dir, include_patterns=None, ignore_patterns=None, follow_link
     return sorted(result)
 
 
-def get_files_glob(work_dir, include_patterns=None, ignore_patterns=None, recursive=True):
+def get_files_glob(
+    work_dir, include_patterns=None, ignore_patterns=None, recursive=True
+):
     """
     Args:
         work_dir (str): 要检索的工作目录
-        include_patterns (list[str], optional): 包含的文件规则
-        ignore_patterns (list[str], optional): 忽略的文件规则
+        include_patterns (list[str] or str, optional): 包含的文件规则
+        ignore_patterns (list[str] or str, optional): 忽略的文件规则
         recursive (bool, optional): 是否递归搜索子目录，默认为True
     """
     if os.path.isfile(work_dir):
         result = [work_dir]
     else:
         result = []
-        patterns = include_patterns or ['*']
-
+        include_patterns = ["*"] if include_patterns is None else include_patterns
+        patterns = (
+            include_patterns
+            if isinstance(include_patterns, list)
+            else [include_patterns]
+        )
         for pattern in patterns:
             if recursive:
-                glob_pattern = os.path.join(work_dir, '**', pattern)
+                glob_pattern = os.path.join(work_dir, "**", pattern)
                 matched_files = glob.glob(glob_pattern, recursive=True)
             else:
                 glob_pattern = os.path.join(work_dir, pattern)
                 matched_files = glob.glob(glob_pattern)
 
             if ignore_patterns is not None:
-                for ignore_pattern in ignore_patterns:
-                    matched_files = [file for file in matched_files if not fnmatch.fnmatch(file, ignore_pattern)]
+                patterns1 = (
+                    ignore_patterns
+                    if isinstance(ignore_patterns, list)
+                    else [ignore_patterns]
+                )
+                for ignore_pattern in patterns1:
+                    matched_files = [
+                        file
+                        for file in matched_files
+                        if not fnmatch.fnmatch(file, ignore_pattern)
+                    ]
             result.extend(matched_files)
 
     return sorted(set(result))
@@ -277,28 +317,33 @@ def to_base64(src, tar=None):
         tar (str): 目标文件路径
     """
     if not os.path.isfile(src):
-        logger.warning(f'{src} is not a file path.')
-        return ''
+        logger.warning(f"{src} is not a file path.")
+        return ""
     filename = os.path.split(src)[1]
     ext = os.path.splitext(src)[1][1:]
-    with open(src, 'rb') as f_img:
+    with open(src, "rb") as f_img:
         base64_out = base64.b64encode(f_img.read())
-    content = f"{filename} = [img]:data:image/{ext};base64,{base64_out.decode('utf-8')}\n"
+    content = (
+        f"{filename} = [img]:data:image/{ext};base64,{base64_out.decode('utf-8')}\n"
+    )
     if tar is not None:
         if os.path.exists(tar):
-            logger.warning(f'{tar} is not a file or target file exist.')
+            logger.warning(f"{tar} is not a file or target file exist.")
             return content
-        with open(tar, 'w+', encoding='utf-8') as f:
+        with open(tar, "w+", encoding="utf-8") as f:
             f.write(content)
     return content
 
 
-def sync_folder(src_parent_path, dst_path,
-                files_to_sync: list,
-                remove_diff=False,
-                compare_content=False,
-                remove_original=False,
-                verbose=False):
+def sync_folder(
+    src_parent_path,
+    dst_path,
+    files_to_sync: list,
+    remove_diff=False,
+    compare_content=False,
+    remove_original=False,
+    verbose=False,
+):
     """同步两个目录内的内容
     如果同步过程中有任何修改返回 True 否则返回 False
 
@@ -310,13 +355,16 @@ def sync_folder(src_parent_path, dst_path,
         compare_content (bool, optional): 是否使用 filecmp.cmp 比较，否则仅比较 mtime. Defaults to False.
         remove_original (bool, optional): 是否在同步后删除源文件. Defaults to False.
     """
+
     def path_is_parent(parent_path, child_path):
         # Smooth out relative path names, note: if you are concerned about symbolic links, you should use os.path.realpath too
         parent_path = os.path.abspath(parent_path)
         child_path = os.path.abspath(child_path)
 
         # Compare the common path of the parent and child path with the common path of just the parent path. Using the commonpath method on just the parent path will regularise the path name in the same way as the comparison that deals with both paths, removing any trailing path separator
-        return os.path.commonpath([parent_path]) == os.path.commonpath([parent_path, child_path])
+        return os.path.commonpath([parent_path]) == os.path.commonpath(
+            [parent_path, child_path]
+        )
 
     def make_parent_dir_if_absent(path):
         """如果父级目录不存在则构造父级目录
@@ -328,7 +376,7 @@ def sync_folder(src_parent_path, dst_path,
         if not os.path.exists(dst_dir):
             os.makedirs(dst_dir)
             if verbose:
-                logger.info('Makedirs => {}'.format(dst_dir))
+                logger.info("Makedirs => {}".format(dst_dir))
 
     def remove_empty_dirs(folder):
         if os.path.isdir(folder):
@@ -340,7 +388,12 @@ def sync_folder(src_parent_path, dst_path,
             if len(os.listdir(folder)) == 0 and not os.path.islink(folder):
                 os.rmdir(folder)
 
-    if src_parent_path is None or not os.path.isdir(src_parent_path) or dst_path is None or files_to_sync is None:
+    if (
+        src_parent_path is None
+        or not os.path.isdir(src_parent_path)
+        or dst_path is None
+        or files_to_sync is None
+    ):
         return False
 
     src_parent_path = os.path.realpath(src_parent_path)
@@ -348,13 +401,28 @@ def sync_folder(src_parent_path, dst_path,
     previous_cwd = os.getcwd()
     os.chdir(src_parent_path)
     # 清理相对目录不对的文件 （此处默认了不区分大小写的文件系统）
-    abs_src_pathes = [os.path.realpath(file) for file in files_to_sync if os.path.realpath(file).lower().startswith(src_parent_path.lower())]
+    abs_src_pathes = [
+        os.path.realpath(file)
+        for file in files_to_sync
+        if os.path.realpath(file).lower().startswith(src_parent_path.lower())
+    ]
     os.chdir(previous_cwd)
     # 清理不存在的文件
     abs_src_pathes = [path for path in abs_src_pathes if os.path.exists(path)]
     # 清理递归的目录
     abs_dirs = [path for path in abs_src_pathes if os.path.isdir(path)]
-    abs_src_pathes = [path for path in abs_src_pathes if not os.path.isdir(path) or not any([path_is_parent(other_dir, path) for other_dir in abs_dirs if other_dir != path])]
+    abs_src_pathes = [
+        path
+        for path in abs_src_pathes
+        if not os.path.isdir(path)
+        or not any(
+            [
+                path_is_parent(other_dir, path)
+                for other_dir in abs_dirs
+                if other_dir != path
+            ]
+        )
+    ]
     if len(abs_src_pathes) == 0:
         return False
 
@@ -376,7 +444,11 @@ def sync_folder(src_parent_path, dst_path,
         rel_dst_path = os.path.relpath(abs_src_path, src_parent_path)
         dst_file = os.path.join(dst_path, rel_dst_path)
         if os.path.isfile(abs_src_path):
-            need_sync = not os.path.isfile(dst_file) or (not filecmp.cmp(abs_src_path, dst_file) if compare_content else os.path.getmtime(abs_src_path) - os.path.getmtime(dst_file) > 1)
+            need_sync = not os.path.isfile(dst_file) or (
+                not filecmp.cmp(abs_src_path, dst_file)
+                if compare_content
+                else os.path.getmtime(abs_src_path) - os.path.getmtime(dst_file) > 1
+            )
             # for files
             if need_sync:
                 sync_result = True

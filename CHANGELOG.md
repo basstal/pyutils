@@ -1,3 +1,8 @@
+# [0.4.8] 24-03-25
+
+- 修改： get_files_glob 的 xxx_patterns 支持传字符串。
+- 修改： common_error_out 的 error_message 不再直接包含 out_str 字符串，仅在 error 无内容时使用 out_str。
+
 # [0.4.7] 24-01-02
 
 - 修复： simplelogger.py removeFileHandler 逻辑错误的问题。

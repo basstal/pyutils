@@ -16,9 +16,16 @@ from colorama import Fore, Style
 ErrorRaiseExcpetion = False
 
 if sys.version_info >= (3, 9):
-    logging.basicConfig(level=logging.INFO, datefmt='%y-%m-%d %H:%M:%S', format='%(message)s', encoding='utf-8')
+    logging.basicConfig(
+        level=logging.INFO,
+        datefmt="%y-%m-%d %H:%M:%S",
+        format="%(message)s",
+        encoding="utf-8",
+    )
 else:
-    logging.basicConfig(level=logging.INFO, datefmt='%y-%m-%d %H:%M:%S', format='%(message)s')
+    logging.basicConfig(
+        level=logging.INFO, datefmt="%y-%m-%d %H:%M:%S", format="%(message)s"
+    )
 
 
 class SimpleLogger(object):
@@ -39,31 +46,31 @@ class SimpleLogger(object):
 
     @staticmethod
     def _color_message(message, color_code, bold=False):
-        os.system('')
+        os.system("")
         # Map color_code to actual color
         color_map = {
-            '31': Fore.RED,
-            '32': Fore.GREEN,
-            '33': Fore.YELLOW,
-            '34': Fore.BLUE,
-            '35': Fore.MAGENTA,
-            '36': Fore.CYAN,
-            '37': Fore.WHITE
+            "31": Fore.RED,
+            "32": Fore.GREEN,
+            "33": Fore.YELLOW,
+            "34": Fore.BLUE,
+            "35": Fore.MAGENTA,
+            "36": Fore.CYAN,
+            "37": Fore.WHITE,
         }
         # jenkins 无法识别 Fore.RESET，这里将 Fore.RESET 替换为 ''
-        color = color_map.get(str(color_code), '')
+        color = color_map.get(str(color_code), "")
 
         if bold:
-            return f'{Style.BRIGHT}{color}{message}{Style.RESET_ALL}'
+            return f"{Style.BRIGHT}{color}{message}{Style.RESET_ALL}"
         else:
-            return f'{color}{message}{Style.RESET_ALL}'
+            return f"{color}{message}{Style.RESET_ALL}"
 
     @staticmethod
     def _preprocess_message(message: str):
         if not shd.is_win():
-            message = message.replace('=>', '➜').replace('<=', '✔')
+            message = message.replace("=>", "➜").replace("<=", "✔")
 
-        return message.rstrip('\r\n')
+        return message.rstrip("\r\n")
 
     @staticmethod
     def info(message, bold=False, color_code=None):
@@ -90,16 +97,20 @@ class SimpleLogger(object):
     def addFileHandler(file_path):
         if file_path in SimpleLogger.__hanlder_cache:
             return
-        file_handler = logging.FileHandler(file_path, encoding='utf-8')
+        file_handler = logging.FileHandler(file_path, encoding="utf-8")
 
         class NoEscapeSeqFormatter(logging.Formatter):
-            _ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
+            _ansi_escape = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]")
 
             def format(self, record):
-                record.msg = self._ansi_escape.sub('', record.getMessage())
+                record.msg = self._ansi_escape.sub("", record.getMessage())
                 return super().format(record)
 
-        file_handler.setFormatter(NoEscapeSeqFormatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S'))
+        file_handler.setFormatter(
+            NoEscapeSeqFormatter(
+                "%(asctime)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S"
+            )
+        )
         SimpleLogger.__hanlder_cache[file_path] = file_handler
         SimpleLogger._logger.addHandler(file_handler)
         SimpleLogger._info_logger.addHandler(file_handler)
@@ -145,6 +156,7 @@ def __hook__dispatch(assertion, original_func):
                 """
                 assertion(message)
                 original_func(message, *args)
+
             self.hook_func = real_hook_func
             if original_func == SimpleLogger.warning:
                 SimpleLogger.warning = real_hook_func
@@ -160,6 +172,7 @@ def __hook__dispatch(assertion, original_func):
                 SimpleLogger.info = original_func
             elif self.hook_func == SimpleLogger.error:
                 SimpleLogger.error = original_func
+
     return Restore()
 
 

@@ -33,13 +33,13 @@ import re
 
 
 class Templite(object):
-
-    autowrite = re.compile('(^[\'\"])|(^[a-zA-Z0-9_\.\[\]\'\"]+$)')
-    delimiters = ('${', '}$')
+    autowrite = re.compile("(^['\"])|(^[a-zA-Z0-9_\.\[\]'\"]+$)")
+    delimiters = ("${", "}$")
     cache = {}
 
-    def __init__(self, text=None, filename=None,
-                 encoding='utf-8', delimiters=None, caching=False):
+    def __init__(
+        self, text=None, filename=None, encoding="utf-8", delimiters=None, caching=False
+    ):
         """Loads a template from string or file."""
         if filename:
             filename = os.path.abspath(filename)
@@ -49,14 +49,14 @@ class Templite(object):
             self.file = mtime = None
             key = hash(text)
         else:
-            raise ValueError('either text or filename required')
+            raise ValueError("either text or filename required")
         # set attributes
         self.encoding = encoding
         self.caching = caching
         if delimiters:
             start, end = delimiters
             if len(start) != 2 or len(end) != 2:
-                raise ValueError('each delimiter must be two characters long')
+                raise ValueError("each delimiter must be two characters long")
             self.delimiters = delimiters
         # check cache
         cache = self.cache
@@ -73,13 +73,13 @@ class Templite(object):
 
     def _compile(self, source):
         offset = 0
-        tokens = ['# -*- coding: %s -*-' % self.encoding]
+        tokens = ["# -*- coding: %s -*-" % self.encoding]
         start, end = self.delimiters
         escaped = (re.escape(start), re.escape(end))
-        regex = re.compile('%s(.*?)%s' % escaped, re.DOTALL)
+        regex = re.compile("%s(.*?)%s" % escaped, re.DOTALL)
         for i, part in enumerate(regex.split(source)):
-            part = part.replace('\\'.join(start), start)
-            part = part.replace('\\'.join(end), end)
+            part = part.replace("\\".join(start), start)
+            part = part.replace("\\".join(end), end)
             if i % 2 == 0:
                 if not part:
                     continue
@@ -87,42 +87,47 @@ class Templite(object):
                 if len(lines) > 1:
                     if all(not line.strip() for line in lines):
                         continue
-                part = part.replace('\\', '\\\\').replace('"', '\\"')
-                part = '\t' * offset + 'write("""%s""")' % part
+                part = part.replace("\\", "\\\\").replace('"', '\\"')
+                part = "\t" * offset + 'write("""%s""")' % part
             else:
                 part = part.rstrip()
                 if not part:
                     continue
                 part_stripped = part.lstrip()
-                if part_stripped.startswith(':'):
+                if part_stripped.startswith(":"):
                     if not offset:
-                        raise SyntaxError('no block statement to terminate: ${%s}$' % part)
+                        raise SyntaxError(
+                            "no block statement to terminate: ${%s}$" % part
+                        )
                     offset -= 1
                     part = part_stripped[1:]
-                    if not part.endswith(':'):
+                    if not part.endswith(":"):
                         continue
                 elif self.autowrite.match(part_stripped):
-                    part = 'write(%s)' % part_stripped
+                    part = "write(%s)" % part_stripped
                 lines = part.splitlines()
-                margin = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
-                part = '\n'.join('\t' * offset + line[margin:] for line in lines)
-                if part.endswith(':'):
+                margin = min(
+                    len(line) - len(line.lstrip()) for line in lines if line.strip()
+                )
+                part = "\n".join("\t" * offset + line[margin:] for line in lines)
+                if part.endswith(":"):
                     offset += 1
             tokens.append(part)
         if offset:
-            raise SyntaxError('%i block statement(s) not terminated' % offset)
-        return compile('\n'.join(tokens), self.file or '<string>', 'exec')
+            raise SyntaxError("%i block statement(s) not terminated" % offset)
+        return compile("\n".join(tokens), self.file or "<string>", "exec")
 
     def render(self, **namespace):
         """Renders the template according to the given namespace."""
         stack = []
-        namespace['__file__'] = self.file
+        namespace["__file__"] = self.file
         # add write method
 
         def write(*args):
             for value in args:
                 stack.append(str(value))
-        namespace['write'] = write
+
+        namespace["write"] = write
         # add include method
 
         def include(file):
@@ -132,10 +137,10 @@ class Templite(object):
                 else:
                     base = os.path.dirname(sys.argv[0])
                 file = os.path.join(base, file)
-            t = Templite(None, file, self.encoding,
-                         self.delimiters, self.caching)
+            t = Templite(None, file, self.encoding, self.delimiters, self.caching)
             stack.append(t.render(**namespace))
-        namespace['include'] = include
+
+        namespace["include"] = include
         # execute template code
         exec(self._code, namespace)
-        return ''.join(stack)
+        return "".join(stack)
