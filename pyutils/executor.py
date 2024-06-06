@@ -266,6 +266,7 @@ class Executor:
         work_dir: str = None,
         wrap_blank_with_double_quotes=False,
         before_communicate_callback=None,
+        multi_thread_call=False,
     ):
         """
         启动subprocess , 直接执行命令
@@ -322,7 +323,7 @@ class Executor:
             else:
                 logger.error(f"Unsupported args type : {type(args)}")
 
-        self.__change_cwd(work_dir)
+        # self.__change_cwd(work_dir) Popen 中修改工作目录，看是否会出问题
 
         if self.verbose:
             via = "Shell" if shell else "Program"
@@ -337,6 +338,7 @@ class Executor:
             stderr=subprocess.PIPE,
             env=env,
             shell=shell,
+            cwd=work_dir
         )
         before_communicate_callback and before_communicate_callback(process)
         result = ExecuteResult()
@@ -347,15 +349,14 @@ class Executor:
             if self.verbose:
                 logger.info("<= Async Processing...", True)
         else:
-
-            def stop_process(*args):
-                logger.error(f"The shell process[{process.pid}] have been killed!")
-                process.kill()
-                sys.exit(-1)
-
             event = Event()
-            signal.signal(signal.SIGINT, stop_process)
-            signal.signal(signal.SIGTERM, stop_process)
+            if not multi_thread_call:
+                def stop_process(*args):
+                    logger.error(f'The shell process[{process.pid}] have been killed!')
+                    process.kill()
+                    sys.exit(-1)
+                signal.signal(signal.SIGINT, stop_process)
+                signal.signal(signal.SIGTERM, stop_process)
 
             def run():
                 result.out, result.error = process.communicate()
