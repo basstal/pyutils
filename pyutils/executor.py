@@ -338,7 +338,7 @@ class Executor:
             stderr=subprocess.PIPE,
             env=env,
             shell=shell,
-            cwd=work_dir
+            cwd=work_dir,
         )
         before_communicate_callback and before_communicate_callback(process)
         result = ExecuteResult()
@@ -351,37 +351,46 @@ class Executor:
         else:
             event = Event()
             if not multi_thread_call:
+
                 def stop_process(*args):
-                    logger.error(f'The shell process[{process.pid}] have been killed!')
+                    logger.error(f"The shell process[{process.pid}] have been killed!")
                     process.kill()
                     sys.exit(-1)
+
                 signal.signal(signal.SIGINT, stop_process)
                 signal.signal(signal.SIGTERM, stop_process)
 
             def run():
-                result.out, result.error = process.communicate()
-                result.out = "" if result.out is None else result.out.strip()
-                error_encoding = fsext.detect_encoding(result.error)["encoding"]
-                # python3 str 默认编码为 utf-8
-                result.error = (
-                    ""
-                    if result.error is None
-                    else str(
-                        result.error.strip(),
-                        error_encoding if error_encoding is not None else "utf-8",
+                try:
+                    result.out, result.error = process.communicate()
+                    result.out = "" if result.out is None else result.out.strip()
+                    error_encoding = fsext.detect_encoding(result.error)["encoding"]
+                    # python3 str 默认编码为 utf-8
+                    result.error = (
+                        ""
+                        if result.error is None
+                        else str(
+                            result.error.strip(),
+                            error_encoding if error_encoding is not None else "utf-8",
+                        )
                     )
-                )
-                result.code = process.returncode
-                out_encoding = fsext.detect_encoding(result.out)["encoding"]
-                result.out_str = (
-                    result.out
-                    if isinstance(result.out, str)
-                    else str(
-                        result.out,
-                        out_encoding if out_encoding is not None else "utf-8",
+                    result.code = process.returncode
+                    out_encoding = fsext.detect_encoding(result.out)["encoding"]
+                    result.out_str = (
+                        result.out
+                        if isinstance(result.out, str)
+                        else str(
+                            result.out,
+                            out_encoding if out_encoding is not None else "utf-8",
+                        )
                     )
-                )
-                event.set()
+                except Exception as exception:
+                    logger.error(
+                        f"<= Error: Process Communicate Error!\n{exception}", True
+                    )
+                    result.exception = exception
+                finally:
+                    event.set()
 
             # NOTE:executor popen communicate in another thread for receive kill command
             thread = Thread(target=run, daemon=True)
